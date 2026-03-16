@@ -388,6 +388,7 @@ def main() -> None:
     display_ranking(ranked_todos, win_counts)
     save_ranking(tag_names, todos, win_counts, head_to_head_results, ranked_todos)
 
+    print("💡 Tip: applying will reorder your To Do tasks under the Active tab in Habitica remotely.")
     if args.reorder or prompt_user_for_choice("🚀 Apply this order to Habitica? (Y/N): ", {"Y", "N"}) == "Y":
         apply_ranking_order_to_habitica(ranked_todos)
 

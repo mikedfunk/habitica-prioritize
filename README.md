@@ -103,7 +103,7 @@ After every ranking run, you'll be prompted:
 🚀 Apply this order to Habitica? (Y/N):
 ```
 
-Answering `Y` reorders your tasks in the [Habitica](https://habitica.com) UI (To Do's → Active tab) to match the ranking. To skip the prompt and always apply automatically:
+Answering `Y` **remotely reorders your To Do tasks under the Active tab** in [Habitica](https://habitica.com) to match your ranking. To skip the prompt and always apply automatically:
 
 ```bash
 uv run scripts/prioritize.py --tags Work --reorder
@@ -136,6 +136,9 @@ uv run scripts/prioritize.py --tags Work --reorder
        # 4 (6 wins)  ...
 
 💾 Results saved to ~/.habitica-priority-rank.json
+
+💡 Tip: applying will reorder your To Do tasks under the Active tab in Habitica remotely.
+🚀 Apply this order to Habitica? (Y/N): Y
 
 ✅ Done! Your tasks are ranked and ready to conquer. 🎮
 ```
