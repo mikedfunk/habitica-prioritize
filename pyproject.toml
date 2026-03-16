@@ -7,7 +7,7 @@ packages = ["scripts"]
 
 [project]
 name = "habitica-prioritize"
-version = "0.1.4"
+version = "0.1.5"
 description = "Rank Habitica todos using a pairwise prioritization matrix"
 readme = "README.md"
 requires-python = ">=3.9"
