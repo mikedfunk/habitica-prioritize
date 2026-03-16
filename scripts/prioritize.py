@@ -196,13 +196,13 @@ def run_full_pairwise_comparison(
 
     for comparison_index, (index_a, index_b) in enumerate(pending_pairs):
         print(f"🥊 Battle [{comparison_index + 1}/{total}]")
-        display_comparison_progress(comparison_index, total)
         print(f"  1: {todos[index_a]['text']}")
         print(f"  2: {todos[index_b]['text']}")
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
         winner_task_id = todos[index_a]["id"] if choice == "1" else todos[index_b]["id"]
         win_counts[winner_task_id] += 1
         head_to_head_results[(todos[index_a]["id"], todos[index_b]["id"])] = winner_task_id
+        display_comparison_progress(comparison_index + 1, total)
         if save_callback:
             save_callback(win_counts, head_to_head_results)
         print()
@@ -253,13 +253,13 @@ def run_new_versus_existing_comparison(
 
     for comparison_index, (new_todo, existing_todo) in enumerate(pending_pairs):
         print(f"🥊 Battle [{comparison_index + 1}/{total}]")
-        display_comparison_progress(comparison_index, total)
         print(f"  1: {new_todo['text']}  🆕")
         print(f"  2: {existing_todo['text']}")
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
         winner_task_id = new_todo["id"] if choice == "1" else existing_todo["id"]
         win_counts[winner_task_id] = win_counts.get(winner_task_id, 0) + 1
         head_to_head_results[(new_todo["id"], existing_todo["id"])] = winner_task_id
+        display_comparison_progress(comparison_index + 1, total)
         if save_callback:
             save_callback(win_counts, head_to_head_results)
         print()
