@@ -16,12 +16,14 @@ import requests
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import prioritize
 from prioritize import (
+    MAX_COMFORTABLE_COMPARISONS,
     HeadToHeadResults,
     SavedRanking,
     Todo,
     WinCounts,
     apply_ranking_order_to_habitica,
     build_api_headers,
+    compute_max_items_for_comparisons,
     deserialize_head_to_head,
     display_comparison_progress,
     display_ranking,
@@ -37,6 +39,7 @@ from prioritize import (
     run_new_versus_existing_comparison,
     save_ranking,
     serialize_head_to_head,
+    warn_and_maybe_limit_for_full_pairwise,
 )
 
 
@@ -663,6 +666,84 @@ class TestFetchIncompleteTodos:
 
 
 # ---------------------------------------------------------------------------
+# compute_max_items_for_comparisons()
+# ---------------------------------------------------------------------------
+
+class TestComputeMaxItemsForComparisons:
+    def test_returns_14_for_100_comparisons(self) -> None:
+        # 14*(14-1)/2 = 91 <= 100, 15*(15-1)/2 = 105 > 100
+        assert compute_max_items_for_comparisons(100) == 14
+
+    def test_returns_4_for_6_comparisons(self) -> None:
+        # 4*3/2 = 6 <= 6, 5*4/2 = 10 > 6
+        assert compute_max_items_for_comparisons(6) == 4
+
+    def test_suggested_comparisons_within_limit(self) -> None:
+        for max_c in [10, 50, 100, 200]:
+            n = compute_max_items_for_comparisons(max_c)
+            assert n * (n - 1) // 2 <= max_c
+
+    def test_one_more_item_exceeds_limit(self) -> None:
+        for max_c in [10, 50, 100, 200]:
+            n = compute_max_items_for_comparisons(max_c)
+            assert (n + 1) * n // 2 > max_c
+
+
+# ---------------------------------------------------------------------------
+# warn_and_maybe_limit_for_full_pairwise()
+# ---------------------------------------------------------------------------
+
+class TestWarnAndMaybeLimitForFullPairwise:
+    def _make_todos(self, count: int) -> list[Todo]:
+        return [make_todo(str(i), f"Task {i}") for i in range(count)]
+
+    def test_returns_unchanged_when_within_limit(self) -> None:
+        todos = self._make_todos(5)  # 5*4/2 = 10 comparisons — well within 100
+        result = warn_and_maybe_limit_for_full_pairwise(todos)
+        assert result == todos
+
+    def test_returns_unchanged_when_exactly_at_limit(self) -> None:
+        # Find N where N*(N-1)/2 == MAX_COMFORTABLE_COMPARISONS exactly, or just under
+        n = compute_max_items_for_comparisons(MAX_COMFORTABLE_COMPARISONS)
+        todos = self._make_todos(n)
+        result = warn_and_maybe_limit_for_full_pairwise(todos)
+        assert result == todos
+
+    def test_warns_and_trims_when_user_says_yes(self, capsys: Any) -> None:
+        todos = self._make_todos(20)  # 20*19/2 = 190 > 100
+        with patch("builtins.input", return_value="Y"):
+            result = warn_and_maybe_limit_for_full_pairwise(todos)
+        suggested = compute_max_items_for_comparisons(MAX_COMFORTABLE_COMPARISONS)
+        assert len(result) == suggested
+        output = capsys.readouterr().out
+        assert "🚨" in output
+        assert "💡" in output
+        assert "✅" in output
+
+    def test_returns_full_list_when_user_says_no(self, capsys: Any) -> None:
+        todos = self._make_todos(20)
+        with patch("builtins.input", return_value="N"):
+            result = warn_and_maybe_limit_for_full_pairwise(todos)
+        assert len(result) == 20
+        output = capsys.readouterr().out
+        assert "🦁" in output
+
+    def test_warning_includes_comparison_counts(self, capsys: Any) -> None:
+        todos = self._make_todos(20)
+        with patch("builtins.input", return_value="N"):
+            warn_and_maybe_limit_for_full_pairwise(todos)
+        output = capsys.readouterr().out
+        assert "190" in output  # 20*19/2
+
+    def test_trimmed_list_keeps_original_order(self) -> None:
+        todos = self._make_todos(20)
+        with patch("builtins.input", return_value="Y"):
+            result = warn_and_maybe_limit_for_full_pairwise(todos)
+        suggested = compute_max_items_for_comparisons(MAX_COMFORTABLE_COMPARISONS)
+        assert result == todos[:suggested]
+
+
+# ---------------------------------------------------------------------------
 # main()
 # ---------------------------------------------------------------------------
 
@@ -805,6 +886,38 @@ class TestMain:
                                     with patch("builtins.input", side_effect=["", "Y"]):
                                         prioritize.main()
         mock_apply.assert_called_once()
+
+    def test_warning_shown_and_user_trims_when_comparisons_exceed_100(self) -> None:
+        many_todos = [make_todo(str(i), f"Task {i}") for i in range(20)]  # 190 comparisons
+        suggested = compute_max_items_for_comparisons(MAX_COMFORTABLE_COMPARISONS)
+        trimmed_win_counts = {str(i): 0 for i in range(suggested)}
+        trimmed_h2h: HeadToHeadResults = {}
+        with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
+            with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
+                with patch("prioritize.fetch_incomplete_todos", return_value=many_todos):
+                    with patch("prioritize.load_saved_ranking", return_value=None):
+                        with patch("prioritize.run_full_pairwise_comparison", return_value=(trimmed_win_counts, trimmed_h2h)) as mock_full:
+                            with patch("prioritize.save_ranking"):
+                                # Y = trim, Enter = ready to rumble, N = don't apply
+                                with patch("builtins.input", side_effect=["Y", "", "N"]):
+                                    prioritize.main()
+        called_todos = mock_full.call_args[0][0]
+        assert len(called_todos) == suggested
+
+    def test_warning_shown_and_user_proceeds_with_all_when_comparisons_exceed_100(self) -> None:
+        many_todos = [make_todo(str(i), f"Task {i}") for i in range(20)]  # 190 comparisons
+        win_counts = {str(i): 0 for i in range(20)}
+        with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
+            with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
+                with patch("prioritize.fetch_incomplete_todos", return_value=many_todos):
+                    with patch("prioritize.load_saved_ranking", return_value=None):
+                        with patch("prioritize.run_full_pairwise_comparison", return_value=(win_counts, {})) as mock_full:
+                            with patch("prioritize.save_ranking"):
+                                # N = keep all, Enter = ready to rumble, N = don't apply
+                                with patch("builtins.input", side_effect=["N", "", "N"]):
+                                    prioritize.main()
+        called_todos = mock_full.call_args[0][0]
+        assert len(called_todos) == 20
 
     def test_limit_flag_trims_todos(self) -> None:
         with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--limit", "2"]):
