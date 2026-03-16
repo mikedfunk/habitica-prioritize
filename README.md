@@ -95,6 +95,33 @@ Keep existing priorities (K) or re-prioritize everything from scratch (R)? (K/R)
 
 For example, if existing tasks A and B are ranked and new tasks C and D appear, choosing K runs: C vs A, C vs B, D vs A, D vs B — but never C vs D or A vs B again.
 
+### 📊 Check ranking status without running battles
+
+To see how many battles are answered and how many remain, without being prompted for any comparisons:
+
+```bash
+uv run habitica-prioritize --tags Work --status
+```
+
+Example output (fully ranked):
+```
+📊 Status for: Work
+   Todos fetched:        14
+   Battles answered:     43  (already saved)
+   Battles remaining:    48
+   Total battles:        91
+   New todos:             0
+```
+
+Example output (new todos found):
+```
+📊 Status for: Work
+   Todos fetched:        16
+   Battles answered:     91  (already saved)
+   New todos:             2  (not yet compared)
+   New battles needed:   32  (2 new × 16 existing)
+```
+
 ### ⚡ Incremental re-rank without prompting
 
 To automatically choose K (keep existing priorities) without being asked:

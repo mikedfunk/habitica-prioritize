@@ -355,6 +355,43 @@ def display_ranking(ranked_todos: list[Todo], win_counts: WinCounts) -> None:
     print()
 
 
+def print_status(
+    todos: list[Todo],
+    tag_names: list[str],
+    saved_ranking: SavedRanking | None,
+) -> None:
+    """Print a summary of ranking progress and exit. No battles are run."""
+    tag_label = ", ".join(tag_names) if tag_names else "(no filter)"
+    print(f"\n📊 Status for: {tag_label}")
+    print(f"   Todos fetched:        {len(todos)}")
+
+    if not saved_ranking:
+        print("   No saved ranking found. Run without --status to begin.")
+        return
+
+    previous_win_counts: WinCounts = saved_ranking.get("wins", {})
+    previous_h2h: HeadToHeadResults = deserialize_head_to_head(
+        saved_ranking.get("head_to_head", {})
+    )
+    new_todos = [t for t in todos if t["id"] not in previous_win_counts]
+    existing_todos = [t for t in todos if t["id"] in previous_win_counts]
+
+    answered = len(previous_h2h)
+
+    if new_todos:
+        new_battles = len(new_todos) * len(existing_todos)
+        print(f"   Battles answered:     {answered}  (already saved)")
+        print(f"   New todos:             {len(new_todos)}  (not yet compared)")
+        print(f"   New battles needed:   {new_battles}  ({len(new_todos)} new × {len(existing_todos)} existing)")
+    else:
+        expected_full = len(existing_todos) * (len(existing_todos) - 1) // 2
+        remaining_full = expected_full - answered
+        print(f"   Battles answered:     {answered}  (already saved)")
+        print(f"   Battles remaining:    {remaining_full}")
+        print(f"   Total battles:        {expected_full}")
+        print(f"   New todos:             0")
+
+
 def compute_max_items_for_comparisons(max_comparisons: int) -> int:
     """Return the largest N such that N*(N-1)/2 <= max_comparisons."""
     n = 1
@@ -412,6 +449,11 @@ def main() -> None:
         action="store_true",
         help="Automatically apply the ranking order to Habitica without prompting",
     )
+    parser.add_argument(
+        "--status",
+        action="store_true",
+        help="Show ranking status (battles answered, remaining, new todos) without running any battles.",
+    )
     args = parser.parse_args()
 
     available_tags = fetch_all_tags()
@@ -442,6 +484,11 @@ def main() -> None:
         print(f"  {labels[index] if index < 26 else '?'}: {todo['text']}")
 
     saved_ranking = load_saved_ranking()
+
+    if args.status:
+        print_status(todos, tag_names, saved_ranking)
+        return
+
     win_counts: WinCounts
     head_to_head_results: HeadToHeadResults
 

@@ -50,6 +50,14 @@ Keep existing priorities (K) or re-prioritize everything from scratch (R)? (K/R)
 - **K** — compares each new item against every existing item only (new-vs-new and existing-vs-existing skipped)
 - **R** — full pairwise comparison of all items from scratch
 
+### Check ranking status without running battles
+
+```bash
+uv run habitica-prioritize --tags Work --status
+```
+
+Prints a summary of battles answered, remaining, and new todos — then exits without prompting for any comparisons.
+
 ### Incremental re-rank without prompting
 
 Automatically selects K (keep existing priorities) without prompting:

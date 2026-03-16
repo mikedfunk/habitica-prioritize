@@ -1243,3 +1243,66 @@ class TestMain:
                                     prioritize.main()
         called_with_todos = mock_full.call_args[0][0]
         assert len(called_with_todos) == 2
+
+    def test_status_flag_prints_summary_and_returns_without_battles(
+        self, capsys: Any
+    ) -> None:
+        saved: SavedRanking = {
+            "tags": ["Work"],
+            "wins": {"a": 2, "b": 1, "c": 0},
+            "head_to_head": serialize_head_to_head(MAIN_H2H),
+            "ranked_ids": ["a", "b", "c"],
+        }
+        with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--status"]):
+            with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
+                    with patch("prioritize.load_saved_ranking", return_value=saved):
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison"
+                        ) as mock_full:
+                            prioritize.main()
+        mock_full.assert_not_called()
+        output = capsys.readouterr().out
+        assert "📊 Status for: Work" in output
+        assert "Todos fetched:" in output
+        assert "Battles answered:" in output
+
+    def test_status_flag_no_saved_ranking_prints_message(
+        self, capsys: Any
+    ) -> None:
+        with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--status"]):
+            with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
+                    with patch("prioritize.load_saved_ranking", return_value=None):
+                        prioritize.main()
+        output = capsys.readouterr().out
+        assert "No saved ranking found" in output
+
+    def test_status_flag_with_new_todos_shows_new_battles_needed(
+        self, capsys: Any
+    ) -> None:
+        saved: SavedRanking = {
+            "tags": ["Work"],
+            "wins": {"a": 2, "b": 1},
+            "head_to_head": serialize_head_to_head({("a", "b"): "a"}),
+            "ranked_ids": ["a", "b"],
+        }
+        todos_with_new = [
+            make_todo("a", "Task A"),
+            make_todo("b", "Task B"),
+            make_todo("new", "New Task"),
+        ]
+        with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--status"]):
+            with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=todos_with_new
+                ):
+                    with patch("prioritize.load_saved_ranking", return_value=saved):
+                        prioritize.main()
+        output = capsys.readouterr().out
+        assert "New todos:" in output
+        assert "New battles needed:" in output
