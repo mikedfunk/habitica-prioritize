@@ -14,7 +14,7 @@ requires-python = ">=3.9"
 dependencies = ["requests"]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "ty"]
+dev = ["pytest", "pytest-cov", "ty", "ruff"]
 
 [project.scripts]
 habitica-prioritize = "scripts.prioritize:main"

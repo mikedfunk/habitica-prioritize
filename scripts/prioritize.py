@@ -44,7 +44,9 @@ def build_api_headers() -> dict[str, str]:
     user_id = os.environ.get("HABITICA_USER_ID")
     api_token = os.environ.get("HABITICA_API_TOKEN")
     if not user_id or not api_token:
-        print("Error: HABITICA_USER_ID and HABITICA_API_TOKEN environment variables are required.")
+        print(
+            "Error: HABITICA_USER_ID and HABITICA_API_TOKEN environment variables are required."
+        )
         sys.exit(1)
     return {
         "x-api-user": user_id,
@@ -56,17 +58,25 @@ def build_api_headers() -> dict[str, str]:
 
 def fetch_all_tags() -> dict[str, str]:
     """Return {tag_name: tag_id} for all tags in the user's Habitica account."""
-    response = requests.get(f"{HABITICA_API_BASE_URL}/tags", headers=build_api_headers())
+    response = requests.get(
+        f"{HABITICA_API_BASE_URL}/tags", headers=build_api_headers()
+    )
     response.raise_for_status()
     return {tag["name"]: tag["id"] for tag in response.json()["data"]}
 
 
-def find_tag_ids_by_name(tag_names: list[str], available_tags: dict[str, str]) -> list[str]:
+def find_tag_ids_by_name(
+    tag_names: list[str], available_tags: dict[str, str]
+) -> list[str]:
     """Look up tag IDs by name (case-insensitive), exiting if any name is not found."""
     resolved_ids: list[str] = []
     for tag_name in tag_names:
         matching_id = next(
-            (tag_id for name, tag_id in available_tags.items() if name.lower() == tag_name.lower()),
+            (
+                tag_id
+                for name, tag_id in available_tags.items()
+                if name.lower() == tag_name.lower()
+            ),
             None,
         )
         if not matching_id:
@@ -82,7 +92,9 @@ def prompt_user_for_tag_filter(available_tags: dict[str, str]) -> list[str]:
     for tag_name in sorted(available_tags):
         print(f"  • {tag_name}")
     print()
-    user_input = input("Filter by tags (comma-separated, or press Enter for no filter): ").strip()
+    user_input = input(
+        "Filter by tags (comma-separated, or press Enter for no filter): "
+    ).strip()
     if not user_input:
         return []
     return [tag_name.strip() for tag_name in user_input.split(",") if tag_name.strip()]
@@ -96,9 +108,13 @@ def fetch_incomplete_todos(required_tag_ids: list[str]) -> list[Todo]:
     )
     response.raise_for_status()
     return [
-        todo for todo in response.json()["data"]
+        todo
+        for todo in response.json()["data"]
         if not todo.get("completed")
-        and all(required_tag_id in todo.get("tags", []) for required_tag_id in required_tag_ids)
+        and all(
+            required_tag_id in todo.get("tags", [])
+            for required_tag_id in required_tag_ids
+        )
     ]
 
 
@@ -115,7 +131,9 @@ def serialize_head_to_head(head_to_head_results: HeadToHeadResults) -> dict[str,
     }
 
 
-def deserialize_head_to_head(serialized_head_to_head: dict[str, str]) -> HeadToHeadResults:
+def deserialize_head_to_head(
+    serialized_head_to_head: dict[str, str],
+) -> HeadToHeadResults:
     """Deserialize stored head-to-head strings back to tuple keys."""
     return {
         (serialized_key.split("|||")[0], serialized_key.split("|||")[1]): winner_task_id
@@ -130,7 +148,9 @@ def display_comparison_progress(completed: int, total: int) -> None:
     filled_blocks = int(percent_complete / 5)  # 20-block bar (each block = 5%)
     empty_blocks = 20 - filled_blocks
     progress_bar = "█" * filled_blocks + "░" * empty_blocks
-    print(f"  ⚔️  [{progress_bar}] {percent_complete}%  —  {completed} done, {remaining} to go 💪")
+    print(
+        f"  ⚔️  [{progress_bar}] {percent_complete}%  —  {completed} done, {remaining} to go 💪"
+    )
 
 
 def prompt_user_for_choice(prompt: str, valid_choices: set[str]) -> str:
@@ -141,18 +161,24 @@ def prompt_user_for_choice(prompt: str, valid_choices: set[str]) -> str:
         print(f"  Please enter one of: {', '.join(sorted(valid_choices))}")
 
 
-def run_full_pairwise_comparison(todos: list[Todo]) -> tuple[WinCounts, HeadToHeadResults]:
+def run_full_pairwise_comparison(
+    todos: list[Todo],
+) -> tuple[WinCounts, HeadToHeadResults]:
     """Compare every pair of todos head-to-head. Returns win counts and head-to-head results."""
     todo_count = len(todos)
     labels = generate_comparison_labels(todo_count)
-    label_to_task_id: dict[str, str] = {labels[index]: todos[index]["id"] for index in range(todo_count)}
+    label_to_task_id: dict[str, str] = {
+        labels[index]: todos[index]["id"] for index in range(todo_count)
+    }
     win_counts: WinCounts = {todo["id"]: 0 for todo in todos}
     head_to_head_results: HeadToHeadResults = {}
 
     comparison_pairs = list(combinations(range(todo_count), 2))
     total_comparisons = len(comparison_pairs)
 
-    print(f"\n⚔️  {total_comparisons} head-to-head battles! Pick the higher-priority task.\n")
+    print(
+        f"\n⚔️  {total_comparisons} head-to-head battles! Pick the higher-priority task.\n"
+    )
 
     for comparison_index, (index_a, index_b) in enumerate(comparison_pairs):
         label_a, label_b = labels[index_a], labels[index_b]
@@ -160,10 +186,14 @@ def run_full_pairwise_comparison(todos: list[Todo]) -> tuple[WinCounts, HeadToHe
         display_comparison_progress(comparison_index, total_comparisons)
         print(f"  {label_a}: {todos[index_a]['text']}")
         print(f"  {label_b}: {todos[index_b]['text']}")
-        choice = prompt_user_for_choice(f"  👑 Winner? ({label_a}/{label_b}): ", {label_a, label_b})
+        choice = prompt_user_for_choice(
+            f"  👑 Winner? ({label_a}/{label_b}): ", {label_a, label_b}
+        )
         winner_task_id = label_to_task_id[choice]
         win_counts[winner_task_id] += 1
-        head_to_head_results[(label_to_task_id[label_a], label_to_task_id[label_b])] = winner_task_id
+        head_to_head_results[(label_to_task_id[label_a], label_to_task_id[label_b])] = (
+            winner_task_id
+        )
         print()
 
     return win_counts, head_to_head_results
@@ -193,7 +223,9 @@ def run_new_versus_existing_comparison(
     ]
     total_comparisons = len(comparison_pairs)
 
-    print(f"\n✨ {total_comparisons} battles — new challengers vs. the established guard! N = new, E = existing.\n")
+    print(
+        f"\n✨ {total_comparisons} battles — new challengers vs. the established guard! N = new, E = existing.\n"
+    )
 
     for comparison_index, (new_todo, existing_todo) in enumerate(comparison_pairs):
         print(f"🥊 Battle [{comparison_index + 1}/{total_comparisons}]")
@@ -219,7 +251,9 @@ def rank_todos_by_win_count(
     def resolve_tie_by_head_to_head(todo_a: Todo, todo_b: Todo) -> int:
         forward_key: tuple[str, str] = (todo_a["id"], todo_b["id"])
         reverse_key: tuple[str, str] = (todo_b["id"], todo_a["id"])
-        winner_task_id = head_to_head_results.get(forward_key) or head_to_head_results.get(reverse_key)
+        winner_task_id = head_to_head_results.get(
+            forward_key
+        ) or head_to_head_results.get(reverse_key)
         if winner_task_id == todo_a["id"]:
             return -1
         if winner_task_id == todo_b["id"]:
@@ -227,13 +261,21 @@ def rank_todos_by_win_count(
         return 0
 
     def compare_by_win_count(todo_a: Todo, todo_b: Todo) -> int:
-        win_count_difference = win_counts.get(todo_b["id"], 0) - win_counts.get(todo_a["id"], 0)
-        return win_count_difference if win_count_difference != 0 else resolve_tie_by_head_to_head(todo_a, todo_b)
+        win_count_difference = win_counts.get(todo_b["id"], 0) - win_counts.get(
+            todo_a["id"], 0
+        )
+        return (
+            win_count_difference
+            if win_count_difference != 0
+            else resolve_tie_by_head_to_head(todo_a, todo_b)
+        )
 
     return sorted(todos, key=cmp_to_key(compare_by_win_count))
 
 
-def load_saved_ranking(ranking_file: Path = DEFAULT_RANKING_FILE) -> SavedRanking | None:
+def load_saved_ranking(
+    ranking_file: Path = DEFAULT_RANKING_FILE,
+) -> SavedRanking | None:
     if ranking_file.exists():
         with open(ranking_file) as file:
             return json.load(file)
@@ -302,13 +344,21 @@ def warn_and_maybe_limit_for_full_pairwise(todos: list[Todo]) -> list[Todo]:
 
     suggested = compute_max_items_for_comparisons(MAX_COMFORTABLE_COMPARISONS)
     suggested_comparisons = suggested * (suggested - 1) // 2
-    print(f"\n🚨 Yikes! {count} items = {comparisons} comparisons — that's a marathon, not a sprint! 😅")
-    print(f"💡 Limiting to the top {suggested} items would give you a breezy {suggested_comparisons} comparisons instead.")
-    choice = prompt_user_for_choice(f"✂️  Trim to top {suggested} items? (Y/N): ", {"Y", "N"})
+    print(
+        f"\n🚨 Yikes! {count} items = {comparisons} comparisons — that's a marathon, not a sprint! 😅"
+    )
+    print(
+        f"💡 Limiting to the top {suggested} items would give you a breezy {suggested_comparisons} comparisons instead."
+    )
+    choice = prompt_user_for_choice(
+        f"✂️  Trim to top {suggested} items? (Y/N): ", {"Y", "N"}
+    )
     if choice == "Y":
-        print(f"✅ Trimmed! Let's keep it spicy but survivable. 🌶️")
+        print("✅ Trimmed! Let's keep it spicy but survivable. 🌶️")
         return todos[:suggested]
-    print(f"🦁 Fearless! All {count} items it is — may the odds be ever in your favor! 💪")
+    print(
+        f"🦁 Fearless! All {count} items it is — may the odds be ever in your favor! 💪"
+    )
     return todos
 
 
@@ -348,7 +398,9 @@ def main() -> None:
 
     todos = fetch_incomplete_todos(required_tag_ids)
     if not todos:
-        print(f"😴 No incomplete todos matching tags: {tag_filter_description}. Nothing to rank!")
+        print(
+            f"😴 No incomplete todos matching tags: {tag_filter_description}. Nothing to rank!"
+        )
         sys.exit(0)
 
     if args.limit:
@@ -374,22 +426,31 @@ def main() -> None:
         existing_todos = [todo for todo in todos if todo["id"] in previous_win_counts]
 
         if not new_todos:
-            print("\n✨ No new items found — all todos are already ranked. Here's your current standing:")
-            ranked_todos = rank_todos_by_win_count(todos, previous_win_counts, previous_head_to_head)
+            print(
+                "\n✨ No new items found — all todos are already ranked. Here's your current standing:"
+            )
+            ranked_todos = rank_todos_by_win_count(
+                todos, previous_win_counts, previous_head_to_head
+            )
             display_ranking(ranked_todos, previous_win_counts)
             return
 
-        print(f"\n🆕 {len(new_todos)} new challenger(s) detected! {len(existing_todos)} veterans already ranked.")
+        print(
+            f"\n🆕 {len(new_todos)} new challenger(s) detected! {len(existing_todos)} veterans already ranked."
+        )
 
         keep_existing = False
         if existing_todos:
             if args.incremental:
                 keep_existing = True
             else:
-                keep_existing = prompt_user_for_choice(
-                    "Keep existing priorities (K) or re-prioritize everything from scratch (R)? (K/R): ",
-                    {"K", "R"},
-                ) == "K"
+                keep_existing = (
+                    prompt_user_for_choice(
+                        "Keep existing priorities (K) or re-prioritize everything from scratch (R)? (K/R): ",
+                        {"K", "R"},
+                    )
+                    == "K"
+                )
 
         if keep_existing:
             input("\n🥊 Ready to rumble? Press Enter to begin...")
@@ -410,8 +471,16 @@ def main() -> None:
     display_ranking(ranked_todos, win_counts)
     save_ranking(tag_names, todos, win_counts, head_to_head_results, ranked_todos)
 
-    print("💡 Tip: applying will reorder your To Do tasks under the Active tab in Habitica remotely.")
-    if args.reorder or prompt_user_for_choice("🚀 Apply this order to Habitica? (Y/N): ", {"Y", "N"}) == "Y":
+    print(
+        "💡 Tip: applying will reorder your To Do tasks under the Active tab in Habitica remotely."
+    )
+    if (
+        args.reorder
+        or prompt_user_for_choice(
+            "🚀 Apply this order to Habitica? (Y/N): ", {"Y", "N"}
+        )
+        == "Y"
+    ):
         apply_ranking_order_to_habitica(ranked_todos)
 
 

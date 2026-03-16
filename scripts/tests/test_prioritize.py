@@ -47,6 +47,7 @@ from prioritize import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 def make_todo(id: str, text: str) -> Todo:
     return {"id": id, "text": text, "tags": [], "completed": False}
 
@@ -63,6 +64,7 @@ def sample_todos() -> list[Todo]:
 # ---------------------------------------------------------------------------
 # generate_comparison_labels()
 # ---------------------------------------------------------------------------
+
 
 class TestGenerateComparisonLabels:
     def test_single_item(self) -> None:
@@ -87,6 +89,7 @@ class TestGenerateComparisonLabels:
 # serialize_head_to_head() / deserialize_head_to_head()
 # ---------------------------------------------------------------------------
 
+
 class TestHeadToHeadSerialization:
     def test_serialize_produces_string_keys(self) -> None:
         head_to_head_results: HeadToHeadResults = {("a", "b"): "a"}
@@ -106,7 +109,10 @@ class TestHeadToHeadSerialization:
             ("a", "c"): "a",
             ("b", "c"): "b",
         }
-        assert deserialize_head_to_head(serialize_head_to_head(head_to_head_results)) == head_to_head_results
+        assert (
+            deserialize_head_to_head(serialize_head_to_head(head_to_head_results))
+            == head_to_head_results
+        )
 
     def test_empty_results(self) -> None:
         assert serialize_head_to_head({}) == {}
@@ -117,8 +123,13 @@ class TestHeadToHeadSerialization:
 # find_tag_ids_by_name()
 # ---------------------------------------------------------------------------
 
+
 class TestFindTagIdsByName:
-    AVAILABLE_TAGS = {"Work": "id-work", "Personal": "id-personal", "Urgent": "id-urgent"}
+    AVAILABLE_TAGS = {
+        "Work": "id-work",
+        "Personal": "id-personal",
+        "Urgent": "id-urgent",
+    }
 
     def test_resolves_single_tag(self) -> None:
         result = find_tag_ids_by_name(["Work"], self.AVAILABLE_TAGS)
@@ -144,6 +155,7 @@ class TestFindTagIdsByName:
 # ---------------------------------------------------------------------------
 # prompt_user_for_tag_filter()
 # ---------------------------------------------------------------------------
+
 
 class TestPromptUserForTagFilter:
     AVAILABLE_TAGS = {"Work": "id-work", "Personal": "id-personal"}
@@ -173,6 +185,7 @@ class TestPromptUserForTagFilter:
 # prompt_user_for_choice()
 # ---------------------------------------------------------------------------
 
+
 class TestPromptUserForChoice:
     def test_returns_valid_choice(self) -> None:
         with patch("builtins.input", return_value="a"):
@@ -199,6 +212,7 @@ class TestPromptUserForChoice:
 # rank_todos_by_win_count()
 # ---------------------------------------------------------------------------
 
+
 class TestRankTodosByWinCount:
     def test_clear_winner(self, sample_todos: list[Todo]) -> None:
         win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
@@ -207,7 +221,9 @@ class TestRankTodosByWinCount:
             ("a", "c"): "a",
             ("b", "c"): "b",
         }
-        ranked_todos = rank_todos_by_win_count(sample_todos, win_counts, head_to_head_results)
+        ranked_todos = rank_todos_by_win_count(
+            sample_todos, win_counts, head_to_head_results
+        )
         assert [todo["id"] for todo in ranked_todos] == ["a", "b", "c"]
 
     def test_reverse_wins(self, sample_todos: list[Todo]) -> None:
@@ -217,7 +233,9 @@ class TestRankTodosByWinCount:
             ("a", "c"): "c",
             ("b", "c"): "c",
         }
-        ranked_todos = rank_todos_by_win_count(sample_todos, win_counts, head_to_head_results)
+        ranked_todos = rank_todos_by_win_count(
+            sample_todos, win_counts, head_to_head_results
+        )
         assert [todo["id"] for todo in ranked_todos] == ["c", "b", "a"]
 
     def test_tie_broken_by_head_to_head(self, sample_todos: list[Todo]) -> None:
@@ -228,11 +246,15 @@ class TestRankTodosByWinCount:
             ("a", "c"): "a",
             ("b", "c"): "b",
         }
-        ranked_todos = rank_todos_by_win_count(sample_todos, win_counts, head_to_head_results)
+        ranked_todos = rank_todos_by_win_count(
+            sample_todos, win_counts, head_to_head_results
+        )
         assert ranked_todos[0]["id"] == "b"
         assert ranked_todos[1]["id"] == "a"
 
-    def test_tie_broken_by_reversed_head_to_head_key(self, sample_todos: list[Todo]) -> None:
+    def test_tie_broken_by_reversed_head_to_head_key(
+        self, sample_todos: list[Todo]
+    ) -> None:
         # head-to-head stored with reversed key order — should still resolve correctly
         win_counts: WinCounts = {"a": 1, "b": 1, "c": 0}
         head_to_head_results: HeadToHeadResults = {
@@ -240,7 +262,9 @@ class TestRankTodosByWinCount:
             ("a", "c"): "a",
             ("b", "c"): "b",
         }
-        ranked_todos = rank_todos_by_win_count(sample_todos, win_counts, head_to_head_results)
+        ranked_todos = rank_todos_by_win_count(
+            sample_todos, win_counts, head_to_head_results
+        )
         assert ranked_todos[0]["id"] == "b"
 
     def test_missing_win_counts_default_to_zero(self) -> None:
@@ -258,11 +282,14 @@ class TestRankTodosByWinCount:
 # run_full_pairwise_comparison()
 # ---------------------------------------------------------------------------
 
+
 class TestRunFullPairwiseComparison:
     def test_first_item_wins_most_comparisons(self, sample_todos: list[Todo]) -> None:
         # Pairs for 3 items: AB, AC, BC — pick first of each pair: A, A, B
         with patch("builtins.input", side_effect=["A", "A", "B"]):
-            win_counts, head_to_head_results = run_full_pairwise_comparison(sample_todos)
+            win_counts, head_to_head_results = run_full_pairwise_comparison(
+                sample_todos
+            )
 
         assert win_counts["a"] == 2
         assert win_counts["b"] == 1
@@ -281,7 +308,9 @@ class TestRunFullPairwiseComparison:
     def test_last_item_wins_all(self, sample_todos: list[Todo]) -> None:
         # Pairs: AB → B, AC → C, BC → C
         with patch("builtins.input", side_effect=["B", "C", "C"]):
-            win_counts, head_to_head_results = run_full_pairwise_comparison(sample_todos)
+            win_counts, head_to_head_results = run_full_pairwise_comparison(
+                sample_todos
+            )
 
         assert win_counts["a"] == 0
         assert win_counts["b"] == 1
@@ -290,7 +319,9 @@ class TestRunFullPairwiseComparison:
     def test_head_to_head_records_winner(self, sample_todos: list[Todo]) -> None:
         # A beats B, A beats C, B beats C → pairs AB, AC, BC
         with patch("builtins.input", side_effect=["A", "A", "B"]):
-            win_counts, head_to_head_results = run_full_pairwise_comparison(sample_todos)
+            win_counts, head_to_head_results = run_full_pairwise_comparison(
+                sample_todos
+            )
 
         assert head_to_head_results[("a", "b")] == "a"
         assert head_to_head_results[("a", "c")] == "a"
@@ -301,8 +332,11 @@ class TestRunFullPairwiseComparison:
 # run_new_versus_existing_comparison()
 # ---------------------------------------------------------------------------
 
+
 class TestRunNewVersusExistingComparison:
-    def test_single_new_todo_wins_all_comparisons(self, sample_todos: list[Todo]) -> None:
+    def test_single_new_todo_wins_all_comparisons(
+        self, sample_todos: list[Todo]
+    ) -> None:
         new_todos = [make_todo("new", "New Task")]
         previous_win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
 
@@ -315,7 +349,9 @@ class TestRunNewVersusExistingComparison:
         assert win_counts["a"] == 2  # existing wins unchanged
         assert win_counts["b"] == 1  # existing wins unchanged
 
-    def test_single_new_todo_loses_all_comparisons(self, sample_todos: list[Todo]) -> None:
+    def test_single_new_todo_loses_all_comparisons(
+        self, sample_todos: list[Todo]
+    ) -> None:
         new_todos = [make_todo("new", "New Task")]
         previous_win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
 
@@ -329,7 +365,9 @@ class TestRunNewVersusExistingComparison:
         assert win_counts["b"] == 2
         assert win_counts["c"] == 1
 
-    def test_multiple_new_todos_not_compared_against_each_other(self, sample_todos: list[Todo]) -> None:
+    def test_multiple_new_todos_not_compared_against_each_other(
+        self, sample_todos: list[Todo]
+    ) -> None:
         new_todos = [make_todo("new1", "New Task 1"), make_todo("new2", "New Task 2")]
         previous_win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
 
@@ -344,7 +382,9 @@ class TestRunNewVersusExistingComparison:
         assert ("new1", "new2") not in head_to_head_results
         assert ("new2", "new1") not in head_to_head_results
 
-    def test_correct_number_of_comparisons_new_times_existing(self, sample_todos: list[Todo]) -> None:
+    def test_correct_number_of_comparisons_new_times_existing(
+        self, sample_todos: list[Todo]
+    ) -> None:
         new_todos = [make_todo("new1", "New Task 1"), make_todo("new2", "New Task 2")]
         previous_win_counts: WinCounts = {"a": 0, "b": 0, "c": 0}
 
@@ -356,7 +396,9 @@ class TestRunNewVersusExistingComparison:
         # 2 new × 3 existing = 6 comparisons
         assert len(head_to_head_results) == 6
 
-    def test_head_to_head_entries_created_for_all_new_vs_existing_pairs(self, sample_todos: list[Todo]) -> None:
+    def test_head_to_head_entries_created_for_all_new_vs_existing_pairs(
+        self, sample_todos: list[Todo]
+    ) -> None:
         new_todos = [make_todo("new", "New Task")]
 
         with patch("builtins.input", return_value="N"):
@@ -368,13 +410,17 @@ class TestRunNewVersusExistingComparison:
         assert ("new", "b") in head_to_head_results
         assert ("new", "c") in head_to_head_results
 
-    def test_does_not_mutate_previous_win_counts(self, sample_todos: list[Todo]) -> None:
+    def test_does_not_mutate_previous_win_counts(
+        self, sample_todos: list[Todo]
+    ) -> None:
         new_todos = [make_todo("new", "New Task")]
         previous_win_counts: WinCounts = {"a": 1, "b": 0, "c": 0}
         original_win_counts = dict(previous_win_counts)
 
         with patch("builtins.input", return_value="N"):
-            run_new_versus_existing_comparison(new_todos, sample_todos, previous_win_counts, {})
+            run_new_versus_existing_comparison(
+                new_todos, sample_todos, previous_win_counts, {}
+            )
 
         assert previous_win_counts == original_win_counts
 
@@ -383,12 +429,15 @@ class TestRunNewVersusExistingComparison:
 # load_saved_ranking() / save_ranking()
 # ---------------------------------------------------------------------------
 
+
 class TestPersistence:
     def test_load_returns_none_when_file_missing(self, tmp_path: Path) -> None:
         result = load_saved_ranking(tmp_path / "nonexistent.json")
         assert result is None
 
-    def test_save_and_load_round_trip(self, tmp_path: Path, sample_todos: list[Todo]) -> None:
+    def test_save_and_load_round_trip(
+        self, tmp_path: Path, sample_todos: list[Todo]
+    ) -> None:
         ranking_file = tmp_path / "ranking.json"
         win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
         head_to_head_results: HeadToHeadResults = {
@@ -396,9 +445,18 @@ class TestPersistence:
             ("a", "c"): "a",
             ("b", "c"): "b",
         }
-        ranked_todos = rank_todos_by_win_count(sample_todos, win_counts, head_to_head_results)
+        ranked_todos = rank_todos_by_win_count(
+            sample_todos, win_counts, head_to_head_results
+        )
 
-        save_ranking(["Work"], sample_todos, win_counts, head_to_head_results, ranked_todos, ranking_file=ranking_file)
+        save_ranking(
+            ["Work"],
+            sample_todos,
+            win_counts,
+            head_to_head_results,
+            ranked_todos,
+            ranking_file=ranking_file,
+        )
         loaded_ranking = load_saved_ranking(ranking_file)
 
         assert loaded_ranking is not None
@@ -406,11 +464,14 @@ class TestPersistence:
         assert loaded_ranking["wins"] == win_counts
         assert loaded_ranking["ranked_ids"] == ["a", "b", "c"]
 
-    def test_save_serialises_head_to_head_keys(self, tmp_path: Path, sample_todos: list[Todo]) -> None:
+    def test_save_serialises_head_to_head_keys(
+        self, tmp_path: Path, sample_todos: list[Todo]
+    ) -> None:
         ranking_file = tmp_path / "ranking.json"
         head_to_head_results: HeadToHeadResults = {("a", "b"): "a"}
         save_ranking(
-            ["Work"], sample_todos,
+            ["Work"],
+            sample_todos,
             {"a": 1, "b": 0, "c": 0},
             head_to_head_results,
             sample_todos,
@@ -420,11 +481,20 @@ class TestPersistence:
         file_contents = json.loads(ranking_file.read_text())
         assert "a|||b" in file_contents["head_to_head"]
 
-    def test_load_deserialises_head_to_head_keys(self, tmp_path: Path, sample_todos: list[Todo]) -> None:
+    def test_load_deserialises_head_to_head_keys(
+        self, tmp_path: Path, sample_todos: list[Todo]
+    ) -> None:
         ranking_file = tmp_path / "ranking.json"
         head_to_head_results: HeadToHeadResults = {("a", "b"): "a", ("b", "c"): "b"}
         win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
-        save_ranking(["Work"], sample_todos, win_counts, head_to_head_results, sample_todos, ranking_file=ranking_file)
+        save_ranking(
+            ["Work"],
+            sample_todos,
+            win_counts,
+            head_to_head_results,
+            sample_todos,
+            ranking_file=ranking_file,
+        )
 
         loaded_ranking = load_saved_ranking(ranking_file)
         assert loaded_ranking is not None
@@ -437,12 +507,15 @@ class TestPersistence:
 # apply_ranking_order_to_habitica()
 # ---------------------------------------------------------------------------
 
+
 class TestApplyRankingOrderToHabitica:
     def test_calls_api_for_each_todo(self, sample_todos: list[Todo]) -> None:
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
 
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.post", return_value=mock_response) as mock_post:
                 apply_ranking_order_to_habitica(sample_todos)
 
@@ -452,7 +525,9 @@ class TestApplyRankingOrderToHabitica:
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
 
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.post", return_value=mock_response) as mock_post:
                 apply_ranking_order_to_habitica(sample_todos)
 
@@ -465,7 +540,9 @@ class TestApplyRankingOrderToHabitica:
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
 
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.post", return_value=mock_response) as mock_post:
                 apply_ranking_order_to_habitica(sample_todos)
 
@@ -475,7 +552,9 @@ class TestApplyRankingOrderToHabitica:
         assert "/tasks/c/move" in api_calls[2][0][0]
 
     def test_empty_list_makes_no_api_calls(self) -> None:
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.post") as mock_post:
                 apply_ranking_order_to_habitica([])
 
@@ -485,7 +564,9 @@ class TestApplyRankingOrderToHabitica:
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
 
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.post", return_value=mock_response) as mock_post:
                 apply_ranking_order_to_habitica(sample_todos[:1])
 
@@ -497,6 +578,7 @@ class TestApplyRankingOrderToHabitica:
 # ---------------------------------------------------------------------------
 # display_comparison_progress()
 # ---------------------------------------------------------------------------
+
 
 class TestDisplayComparisonProgress:
     def test_shows_zero_percent_at_start(self, capsys: Any) -> None:
@@ -540,6 +622,7 @@ class TestDisplayComparisonProgress:
 # display_ranking() — smoke test (just ensure no exceptions)
 # ---------------------------------------------------------------------------
 
+
 class TestDisplayRanking:
     def test_prints_without_error(self, sample_todos: list[Todo], capsys: Any) -> None:
         win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
@@ -561,6 +644,7 @@ class TestDisplayRanking:
 # build_api_headers()
 # ---------------------------------------------------------------------------
 
+
 class TestBuildApiHeaders:
     def test_exits_when_env_vars_missing(self) -> None:
         with patch.dict(os.environ, {}, clear=True):
@@ -573,7 +657,9 @@ class TestBuildApiHeaders:
                 build_api_headers()
 
     def test_returns_correct_headers_when_env_vars_set(self) -> None:
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             headers = build_api_headers()
         assert headers["x-api-user"] == "uid"
         assert headers["x-api-key"] == "token"
@@ -584,13 +670,19 @@ class TestBuildApiHeaders:
 # fetch_all_tags()
 # ---------------------------------------------------------------------------
 
+
 class TestFetchAllTags:
     def test_returns_tag_name_to_id_mapping(self) -> None:
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "data": [{"name": "Work", "id": "id-work"}, {"name": "Personal", "id": "id-personal"}]
+            "data": [
+                {"name": "Work", "id": "id-work"},
+                {"name": "Personal", "id": "id-personal"},
+            ]
         }
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.get", return_value=mock_response):
                 result = fetch_all_tags()
         assert result == {"Work": "id-work", "Personal": "id-personal"}
@@ -598,7 +690,9 @@ class TestFetchAllTags:
     def test_raises_on_http_error(self) -> None:
         mock_response = MagicMock()
         mock_response.raise_for_status.side_effect = requests.HTTPError("404")
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.get", return_value=mock_response):
                 with pytest.raises(requests.HTTPError):
                     fetch_all_tags()
@@ -607,6 +701,7 @@ class TestFetchAllTags:
 # ---------------------------------------------------------------------------
 # fetch_incomplete_todos()
 # ---------------------------------------------------------------------------
+
 
 class TestFetchIncompleteTodos:
     def test_returns_only_incomplete_todos(self) -> None:
@@ -617,7 +712,9 @@ class TestFetchIncompleteTodos:
                 {"id": "b", "text": "B", "tags": [], "completed": True},
             ]
         }
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.get", return_value=mock_response):
                 result = fetch_incomplete_todos([])
         assert len(result) == 1
@@ -631,7 +728,9 @@ class TestFetchIncompleteTodos:
                 {"id": "b", "text": "B", "tags": [], "completed": False},
             ]
         }
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.get", return_value=mock_response):
                 result = fetch_incomplete_todos(["tag-work"])
         assert len(result) == 1
@@ -645,7 +744,9 @@ class TestFetchIncompleteTodos:
                 {"id": "b", "text": "B", "tags": ["tag-work"], "completed": False},
             ]
         }
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.get", return_value=mock_response):
                 result = fetch_incomplete_todos([])
         assert len(result) == 2
@@ -654,11 +755,18 @@ class TestFetchIncompleteTodos:
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "data": [
-                {"id": "a", "text": "A", "tags": ["tag-work", "tag-urgent"], "completed": False},
+                {
+                    "id": "a",
+                    "text": "A",
+                    "tags": ["tag-work", "tag-urgent"],
+                    "completed": False,
+                },
                 {"id": "b", "text": "B", "tags": ["tag-work"], "completed": False},
             ]
         }
-        with patch.dict(os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}):
+        with patch.dict(
+            os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
+        ):
             with patch("requests.get", return_value=mock_response):
                 result = fetch_incomplete_todos(["tag-work", "tag-urgent"])
         assert len(result) == 1
@@ -668,6 +776,7 @@ class TestFetchIncompleteTodos:
 # ---------------------------------------------------------------------------
 # compute_max_items_for_comparisons()
 # ---------------------------------------------------------------------------
+
 
 class TestComputeMaxItemsForComparisons:
     def test_returns_14_for_100_comparisons(self) -> None:
@@ -692,6 +801,7 @@ class TestComputeMaxItemsForComparisons:
 # ---------------------------------------------------------------------------
 # warn_and_maybe_limit_for_full_pairwise()
 # ---------------------------------------------------------------------------
+
 
 class TestWarnAndMaybeLimitForFullPairwise:
     def _make_todos(self, count: int) -> list[Todo]:
@@ -748,7 +858,11 @@ class TestWarnAndMaybeLimitForFullPairwise:
 # ---------------------------------------------------------------------------
 
 MAIN_AVAILABLE_TAGS = {"Work": "id-work"}
-MAIN_SAMPLE_TODOS = [make_todo("a", "Task A"), make_todo("b", "Task B"), make_todo("c", "Task C")]
+MAIN_SAMPLE_TODOS = [
+    make_todo("a", "Task A"),
+    make_todo("b", "Task B"),
+    make_todo("c", "Task C"),
+]
 MAIN_WIN_COUNTS: WinCounts = {"a": 2, "b": 1, "c": 0}
 MAIN_H2H: HeadToHeadResults = {("a", "b"): "a", ("a", "c"): "a", ("b", "c"): "b"}
 
@@ -765,9 +879,14 @@ class TestMain:
     def test_no_saved_ranking_runs_full_pairwise(self) -> None:
         with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=None):
-                        with patch("prioritize.run_full_pairwise_comparison", return_value=(MAIN_WIN_COUNTS, MAIN_H2H)) as mock_full:
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=(MAIN_WIN_COUNTS, MAIN_H2H),
+                        ) as mock_full:
                             with patch("prioritize.save_ranking"):
                                 with patch("builtins.input", side_effect=["", "N"]):
                                     prioritize.main()
@@ -782,7 +901,9 @@ class TestMain:
         }
         with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=saved):
                         with patch("prioritize.save_ranking") as mock_save:
                             prioritize.main()
@@ -795,15 +916,26 @@ class TestMain:
             "head_to_head": serialize_head_to_head({("a", "b"): "a"}),
             "ranked_ids": ["a", "b"],
         }
-        todos_with_new = [make_todo("a", "Task A"), make_todo("b", "Task B"), make_todo("new", "New Task")]
+        todos_with_new = [
+            make_todo("a", "Task A"),
+            make_todo("b", "Task B"),
+            make_todo("new", "New Task"),
+        ]
         with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=todos_with_new):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=todos_with_new
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=saved):
-                        with patch("prioritize.run_new_versus_existing_comparison", return_value=({"a": 2, "b": 1, "new": 0}, {})) as mock_keep:
+                        with patch(
+                            "prioritize.run_new_versus_existing_comparison",
+                            return_value=({"a": 2, "b": 1, "new": 0}, {}),
+                        ) as mock_keep:
                             with patch("prioritize.save_ranking"):
                                 # K/R prompt → "K", Enter to begin, Y/N prompt → "N"
-                                with patch("builtins.input", side_effect=["K", "", "N"]):
+                                with patch(
+                                    "builtins.input", side_effect=["K", "", "N"]
+                                ):
                                     prioritize.main()
         mock_keep.assert_called_once()
 
@@ -814,31 +946,53 @@ class TestMain:
             "head_to_head": serialize_head_to_head({("a", "b"): "a"}),
             "ranked_ids": ["a", "b"],
         }
-        todos_with_new = [make_todo("a", "Task A"), make_todo("b", "Task B"), make_todo("new", "New Task")]
+        todos_with_new = [
+            make_todo("a", "Task A"),
+            make_todo("b", "Task B"),
+            make_todo("new", "New Task"),
+        ]
         with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=todos_with_new):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=todos_with_new
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=saved):
-                        with patch("prioritize.run_full_pairwise_comparison", return_value=(MAIN_WIN_COUNTS, MAIN_H2H)) as mock_full:
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=(MAIN_WIN_COUNTS, MAIN_H2H),
+                        ) as mock_full:
                             with patch("prioritize.save_ranking"):
                                 # K/R prompt → "R", Enter to begin, Y/N prompt → "N"
-                                with patch("builtins.input", side_effect=["R", "", "N"]):
+                                with patch(
+                                    "builtins.input", side_effect=["R", "", "N"]
+                                ):
                                     prioritize.main()
         mock_full.assert_called_once()
 
-    def test_incremental_flag_auto_selects_keep_existing_without_prompting(self) -> None:
+    def test_incremental_flag_auto_selects_keep_existing_without_prompting(
+        self,
+    ) -> None:
         saved: SavedRanking = {
             "tags": ["Work"],
             "wins": {"a": 2, "b": 1},
             "head_to_head": serialize_head_to_head({("a", "b"): "a"}),
             "ranked_ids": ["a", "b"],
         }
-        todos_with_new = [make_todo("a", "Task A"), make_todo("b", "Task B"), make_todo("new", "New Task")]
+        todos_with_new = [
+            make_todo("a", "Task A"),
+            make_todo("b", "Task B"),
+            make_todo("new", "New Task"),
+        ]
         with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--incremental"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=todos_with_new):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=todos_with_new
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=saved):
-                        with patch("prioritize.run_new_versus_existing_comparison", return_value=({"a": 2, "b": 1, "new": 0}, {})) as mock_keep:
+                        with patch(
+                            "prioritize.run_new_versus_existing_comparison",
+                            return_value=({"a": 2, "b": 1, "new": 0}, {}),
+                        ) as mock_keep:
                             with patch("prioritize.save_ranking"):
                                 # No K/R prompt — just Enter to begin, Y/N → "N"
                                 with patch("builtins.input", side_effect=["", "N"]):
@@ -854,9 +1008,14 @@ class TestMain:
         }
         with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=saved):
-                        with patch("prioritize.run_full_pairwise_comparison", return_value=(MAIN_WIN_COUNTS, MAIN_H2H)) as mock_full:
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=(MAIN_WIN_COUNTS, MAIN_H2H),
+                        ) as mock_full:
                             with patch("prioritize.save_ranking"):
                                 with patch("builtins.input", side_effect=["", "N"]):
                                     prioritize.main()
@@ -865,11 +1024,18 @@ class TestMain:
     def test_reorder_flag_applies_ranking_without_prompting(self) -> None:
         with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--reorder"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=None):
-                        with patch("prioritize.run_full_pairwise_comparison", return_value=(MAIN_WIN_COUNTS, MAIN_H2H)):
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=(MAIN_WIN_COUNTS, MAIN_H2H),
+                        ):
                             with patch("prioritize.save_ranking"):
-                                with patch("prioritize.apply_ranking_order_to_habitica") as mock_apply:
+                                with patch(
+                                    "prioritize.apply_ranking_order_to_habitica"
+                                ) as mock_apply:
                                     with patch("builtins.input", return_value=""):
                                         prioritize.main()
         mock_apply.assert_called_once()
@@ -877,44 +1043,71 @@ class TestMain:
     def test_user_chooses_yes_to_apply_reorder(self) -> None:
         with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=None):
-                        with patch("prioritize.run_full_pairwise_comparison", return_value=(MAIN_WIN_COUNTS, MAIN_H2H)):
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=(MAIN_WIN_COUNTS, MAIN_H2H),
+                        ):
                             with patch("prioritize.save_ranking"):
-                                with patch("prioritize.apply_ranking_order_to_habitica") as mock_apply:
+                                with patch(
+                                    "prioritize.apply_ranking_order_to_habitica"
+                                ) as mock_apply:
                                     # Enter to begin, Y/N → "Y"
                                     with patch("builtins.input", side_effect=["", "Y"]):
                                         prioritize.main()
         mock_apply.assert_called_once()
 
     def test_warning_shown_and_user_trims_when_comparisons_exceed_100(self) -> None:
-        many_todos = [make_todo(str(i), f"Task {i}") for i in range(20)]  # 190 comparisons
+        many_todos = [
+            make_todo(str(i), f"Task {i}") for i in range(20)
+        ]  # 190 comparisons
         suggested = compute_max_items_for_comparisons(MAX_COMFORTABLE_COMPARISONS)
         trimmed_win_counts = {str(i): 0 for i in range(suggested)}
         trimmed_h2h: HeadToHeadResults = {}
         with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=many_todos):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=many_todos
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=None):
-                        with patch("prioritize.run_full_pairwise_comparison", return_value=(trimmed_win_counts, trimmed_h2h)) as mock_full:
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=(trimmed_win_counts, trimmed_h2h),
+                        ) as mock_full:
                             with patch("prioritize.save_ranking"):
                                 # Y = trim, Enter = ready to rumble, N = don't apply
-                                with patch("builtins.input", side_effect=["Y", "", "N"]):
+                                with patch(
+                                    "builtins.input", side_effect=["Y", "", "N"]
+                                ):
                                     prioritize.main()
         called_todos = mock_full.call_args[0][0]
         assert len(called_todos) == suggested
 
-    def test_warning_shown_and_user_proceeds_with_all_when_comparisons_exceed_100(self) -> None:
-        many_todos = [make_todo(str(i), f"Task {i}") for i in range(20)]  # 190 comparisons
+    def test_warning_shown_and_user_proceeds_with_all_when_comparisons_exceed_100(
+        self,
+    ) -> None:
+        many_todos = [
+            make_todo(str(i), f"Task {i}") for i in range(20)
+        ]  # 190 comparisons
         win_counts = {str(i): 0 for i in range(20)}
         with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=many_todos):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=many_todos
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=None):
-                        with patch("prioritize.run_full_pairwise_comparison", return_value=(win_counts, {})) as mock_full:
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=(win_counts, {}),
+                        ) as mock_full:
                             with patch("prioritize.save_ranking"):
                                 # N = keep all, Enter = ready to rumble, N = don't apply
-                                with patch("builtins.input", side_effect=["N", "", "N"]):
+                                with patch(
+                                    "builtins.input", side_effect=["N", "", "N"]
+                                ):
                                     prioritize.main()
         called_todos = mock_full.call_args[0][0]
         assert len(called_todos) == 20
@@ -922,9 +1115,14 @@ class TestMain:
     def test_limit_flag_trims_todos(self) -> None:
         with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--limit", "2"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
-                with patch("prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
                     with patch("prioritize.load_saved_ranking", return_value=None):
-                        with patch("prioritize.run_full_pairwise_comparison", return_value=({"a": 1, "b": 0}, {("a", "b"): "a"})) as mock_full:
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=({"a": 1, "b": 0}, {("a", "b"): "a"}),
+                        ) as mock_full:
                             with patch("prioritize.save_ranking"):
                                 with patch("builtins.input", side_effect=["", "N"]):
                                     prioritize.main()

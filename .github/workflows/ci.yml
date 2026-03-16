@@ -14,5 +14,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.14"
+      - run: uv run --extra dev ruff check scripts
+      - run: uv run --extra dev ruff format --check scripts
       - run: uv run --extra dev ty check scripts
       - run: uv run --extra dev pytest
