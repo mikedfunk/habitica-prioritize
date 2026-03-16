@@ -25,6 +25,7 @@ import requests
 
 HABITICA_API_BASE_URL = "https://habitica.com/api/v3"
 DEFAULT_RANKING_FILE = Path.home() / ".habitica-priority-rank.json"
+MAX_COMFORTABLE_COMPARISONS = 100
 
 # Type aliases
 WinCounts = dict[str, int]
@@ -284,6 +285,33 @@ def display_ranking(ranked_todos: list[Todo], win_counts: WinCounts) -> None:
     print()
 
 
+def compute_max_items_for_comparisons(max_comparisons: int) -> int:
+    """Return the largest N such that N*(N-1)/2 <= max_comparisons."""
+    n = 1
+    while (n + 1) * n // 2 <= max_comparisons:
+        n += 1
+    return n
+
+
+def warn_and_maybe_limit_for_full_pairwise(todos: list[Todo]) -> list[Todo]:
+    """Warn if a full pairwise would exceed MAX_COMFORTABLE_COMPARISONS and offer to trim."""
+    count = len(todos)
+    comparisons = count * (count - 1) // 2
+    if comparisons <= MAX_COMFORTABLE_COMPARISONS:
+        return todos
+
+    suggested = compute_max_items_for_comparisons(MAX_COMFORTABLE_COMPARISONS)
+    suggested_comparisons = suggested * (suggested - 1) // 2
+    print(f"\n🚨 Yikes! {count} items = {comparisons} comparisons — that's a marathon, not a sprint! 😅")
+    print(f"💡 Limiting to the top {suggested} items would give you a breezy {suggested_comparisons} comparisons instead.")
+    choice = prompt_user_for_choice(f"✂️  Trim to top {suggested} items? (Y/N): ", {"Y", "N"})
+    if choice == "Y":
+        print(f"✅ Trimmed! Let's keep it spicy but survivable. 🌶️")
+        return todos[:suggested]
+    print(f"🦁 Fearless! All {count} items it is — may the odds be ever in your favor! 💪")
+    return todos
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Rank Habitica todos by pairwise comparison (prioritization matrix)."
@@ -369,14 +397,12 @@ def main() -> None:
                 new_todos, existing_todos, previous_win_counts, previous_head_to_head
             )
         else:
-            if todo_count > 15:
-                print(f"\n⚠️  Whoa, {todo_count} items = {todo_count*(todo_count-1)//2} comparisons. Consider --limit 10 to keep it manageable!")
+            todos = warn_and_maybe_limit_for_full_pairwise(todos)
             input("\n🥊 Ready to rumble? Press Enter to begin...")
             win_counts, head_to_head_results = run_full_pairwise_comparison(todos)
 
     else:
-        if todo_count > 15:
-            print(f"\n⚠️  Whoa, {todo_count} items = {todo_count*(todo_count-1)//2} comparisons. Consider --limit 10 to keep it manageable!")
+        todos = warn_and_maybe_limit_for_full_pairwise(todos)
         input("\n🥊 Ready to rumble? Press Enter to begin...")
         win_counts, head_to_head_results = run_full_pairwise_comparison(todos)
 
