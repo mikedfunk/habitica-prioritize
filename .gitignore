@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Test/coverage artifacts
+.coverage
+.pytest_cache/
+
+# macOS
+.DS_Store
