@@ -166,10 +166,6 @@ def run_full_pairwise_comparison(
 ) -> tuple[WinCounts, HeadToHeadResults]:
     """Compare every pair of todos head-to-head. Returns win counts and head-to-head results."""
     todo_count = len(todos)
-    labels = generate_comparison_labels(todo_count)
-    label_to_task_id: dict[str, str] = {
-        labels[index]: todos[index]["id"] for index in range(todo_count)
-    }
     win_counts: WinCounts = {todo["id"]: 0 for todo in todos}
     head_to_head_results: HeadToHeadResults = {}
 
@@ -181,19 +177,14 @@ def run_full_pairwise_comparison(
     )
 
     for comparison_index, (index_a, index_b) in enumerate(comparison_pairs):
-        label_a, label_b = labels[index_a], labels[index_b]
         print(f"🥊 Battle [{comparison_index + 1}/{total_comparisons}]")
         display_comparison_progress(comparison_index, total_comparisons)
-        print(f"  {label_a}: {todos[index_a]['text']}")
-        print(f"  {label_b}: {todos[index_b]['text']}")
-        choice = prompt_user_for_choice(
-            f"  👑 Winner? ({label_a}/{label_b}): ", {label_a, label_b}
-        )
-        winner_task_id = label_to_task_id[choice]
+        print(f"  1: {todos[index_a]['text']}")
+        print(f"  2: {todos[index_b]['text']}")
+        choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
+        winner_task_id = todos[index_a]["id"] if choice == "1" else todos[index_b]["id"]
         win_counts[winner_task_id] += 1
-        head_to_head_results[(label_to_task_id[label_a], label_to_task_id[label_b])] = (
-            winner_task_id
-        )
+        head_to_head_results[(todos[index_a]["id"], todos[index_b]["id"])] = winner_task_id
         print()
 
     return win_counts, head_to_head_results
@@ -224,16 +215,16 @@ def run_new_versus_existing_comparison(
     total_comparisons = len(comparison_pairs)
 
     print(
-        f"\n✨ {total_comparisons} battles — new challengers vs. the established guard! N = new, E = existing.\n"
+        f"\n✨ {total_comparisons} battles — new challengers vs. the established guard!\n"
     )
 
     for comparison_index, (new_todo, existing_todo) in enumerate(comparison_pairs):
         print(f"🥊 Battle [{comparison_index + 1}/{total_comparisons}]")
         display_comparison_progress(comparison_index, total_comparisons)
-        print(f"  N: {new_todo['text']}  🆕")
-        print(f"  E: {existing_todo['text']}")
-        choice = prompt_user_for_choice("  👑 Winner? (N/E): ", {"N", "E"})
-        winner_task_id = new_todo["id"] if choice == "N" else existing_todo["id"]
+        print(f"  1: {new_todo['text']}  🆕")
+        print(f"  2: {existing_todo['text']}")
+        choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
+        winner_task_id = new_todo["id"] if choice == "1" else existing_todo["id"]
         win_counts[winner_task_id] = win_counts.get(winner_task_id, 0) + 1
         head_to_head_results[(new_todo["id"], existing_todo["id"])] = winner_task_id
         print()

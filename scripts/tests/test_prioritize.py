@@ -285,8 +285,8 @@ class TestRankTodosByWinCount:
 
 class TestRunFullPairwiseComparison:
     def test_first_item_wins_most_comparisons(self, sample_todos: list[Todo]) -> None:
-        # Pairs for 3 items: AB, AC, BC — pick first of each pair: A, A, B
-        with patch("builtins.input", side_effect=["A", "A", "B"]):
+        # Pairs for 3 items: (a,b), (a,c), (b,c) — pick 1 (first) each time
+        with patch("builtins.input", side_effect=["1", "1", "1"]):
             win_counts, head_to_head_results = run_full_pairwise_comparison(
                 sample_todos
             )
@@ -296,9 +296,9 @@ class TestRunFullPairwiseComparison:
         assert win_counts["c"] == 0
 
     def test_correct_number_of_comparisons(self) -> None:
-        # 4 items: pairs AB, AC, AD, BC, BD, CD — pick first of each pair
+        # 4 items: 6 pairs — pick 1 (first) each time
         todos = [make_todo(str(index), f"Task {index}") for index in range(4)]
-        user_choices = ["A", "A", "A", "B", "B", "C"]  # first of each pair wins
+        user_choices = ["1", "1", "1", "1", "1", "1"]  # first of each pair wins
 
         with patch("builtins.input", side_effect=user_choices):
             win_counts, head_to_head_results = run_full_pairwise_comparison(todos)
@@ -306,8 +306,8 @@ class TestRunFullPairwiseComparison:
         assert len(head_to_head_results) == 6  # C(4,2) = 6
 
     def test_last_item_wins_all(self, sample_todos: list[Todo]) -> None:
-        # Pairs: AB → B, AC → C, BC → C
-        with patch("builtins.input", side_effect=["B", "C", "C"]):
+        # Pairs: (a,b) → 2=b, (a,c) → 2=c, (b,c) → 2=c
+        with patch("builtins.input", side_effect=["2", "2", "2"]):
             win_counts, head_to_head_results = run_full_pairwise_comparison(
                 sample_todos
             )
@@ -317,8 +317,8 @@ class TestRunFullPairwiseComparison:
         assert win_counts["c"] == 2
 
     def test_head_to_head_records_winner(self, sample_todos: list[Todo]) -> None:
-        # A beats B, A beats C, B beats C → pairs AB, AC, BC
-        with patch("builtins.input", side_effect=["A", "A", "B"]):
+        # (a,b) → 1=a, (a,c) → 1=a, (b,c) → 1=b
+        with patch("builtins.input", side_effect=["1", "1", "1"]):
             win_counts, head_to_head_results = run_full_pairwise_comparison(
                 sample_todos
             )
@@ -340,7 +340,7 @@ class TestRunNewVersusExistingComparison:
         new_todos = [make_todo("new", "New Task")]
         previous_win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
 
-        with patch("builtins.input", return_value="N"):
+        with patch("builtins.input", return_value="1"):
             win_counts, _ = run_new_versus_existing_comparison(
                 new_todos, sample_todos, previous_win_counts, {}
             )
@@ -355,7 +355,7 @@ class TestRunNewVersusExistingComparison:
         new_todos = [make_todo("new", "New Task")]
         previous_win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
 
-        with patch("builtins.input", return_value="E"):
+        with patch("builtins.input", return_value="2"):
             win_counts, _ = run_new_versus_existing_comparison(
                 new_todos, sample_todos, previous_win_counts, {}
             )
@@ -371,7 +371,7 @@ class TestRunNewVersusExistingComparison:
         new_todos = [make_todo("new1", "New Task 1"), make_todo("new2", "New Task 2")]
         previous_win_counts: WinCounts = {"a": 2, "b": 1, "c": 0}
 
-        with patch("builtins.input", return_value="N"):
+        with patch("builtins.input", return_value="1"):
             win_counts, head_to_head_results = run_new_versus_existing_comparison(
                 new_todos, sample_todos, previous_win_counts, {}
             )
@@ -388,7 +388,7 @@ class TestRunNewVersusExistingComparison:
         new_todos = [make_todo("new1", "New Task 1"), make_todo("new2", "New Task 2")]
         previous_win_counts: WinCounts = {"a": 0, "b": 0, "c": 0}
 
-        with patch("builtins.input", return_value="N"):
+        with patch("builtins.input", return_value="1"):
             _, head_to_head_results = run_new_versus_existing_comparison(
                 new_todos, sample_todos, previous_win_counts, {}
             )
@@ -401,7 +401,7 @@ class TestRunNewVersusExistingComparison:
     ) -> None:
         new_todos = [make_todo("new", "New Task")]
 
-        with patch("builtins.input", return_value="N"):
+        with patch("builtins.input", return_value="1"):
             _, head_to_head_results = run_new_versus_existing_comparison(
                 new_todos, sample_todos, {"a": 0, "b": 0, "c": 0}, {}
             )
@@ -417,7 +417,7 @@ class TestRunNewVersusExistingComparison:
         previous_win_counts: WinCounts = {"a": 1, "b": 0, "c": 0}
         original_win_counts = dict(previous_win_counts)
 
-        with patch("builtins.input", return_value="N"):
+        with patch("builtins.input", return_value="1"):
             run_new_versus_existing_comparison(
                 new_todos, sample_todos, previous_win_counts, {}
             )

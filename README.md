@@ -129,9 +129,9 @@ uv run habitica-prioritize --tags Work --reorder
 
 🥊 Battle [1/45]
   ⚔️  [████░░░░░░░░░░░░░░░░] 20%  —  9 done, 36 to go 💪
-  A: Fix production bug in auth service
-  B: Write Q2 roadmap doc
-  👑 Winner? (A/B): A
+  1: Fix production bug in auth service
+  2: Write Q2 roadmap doc
+  👑 Winner? (1/2): 1
 
 ...
 

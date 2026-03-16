@@ -78,7 +78,7 @@ Environment variables must be set:
 ## How it works
 
 1. Fetches all incomplete todos matching the given tags (AND logic — todos must have all specified tags)
-2. Walks you through every pair: "Which is higher priority? (A/B)"
+2. Walks you through every pair: "Which is higher priority? (1/2)"
 3. Tallies wins per item
 4. Produces a ranked list (#1 = most wins)
 5. Saves results to `~/.habitica-priority-rank.json` for incremental use
