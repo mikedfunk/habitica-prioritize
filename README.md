@@ -67,10 +67,18 @@ uv run habitica-prioritize --tags Work Urgent
 uv run habitica-prioritize --tags
 ```
 
-Limit to top N items (recommended ≤15 — N items = N×(N-1)/2 comparisons):
+Optionally limit to top N items manually:
 
 ```bash
 uv run habitica-prioritize --tags Work --limit 10
+```
+
+Or let the script handle it — if you have enough tasks that a full ranking would exceed 100 comparisons (more than 14 items), you'll be warned and offered an automatic trim:
+
+```
+🚨 Yikes! 35 items = 595 comparisons — that's a marathon, not a sprint! 😅
+💡 Limiting to the top 14 items would give you a breezy 91 comparisons instead.
+✂️  Trim to top 14 items? (Y/N):
 ```
 
 ### 🆕 When new tasks are found (K/R prompt)
@@ -146,7 +154,7 @@ uv run habitica-prioritize --tags Work --reorder
 ## 🧪 Running tests
 
 ```bash
-uv run pytest scripts/tests/ -v
+uv run --extra dev pytest scripts/tests/ -v
 ```
 
 ## 📄 License
