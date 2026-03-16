@@ -338,6 +338,20 @@ class TestRunFullPairwiseComparison:
         assert len(h2h) == 3
         assert h2h[("a", "b")] == "a"  # preserved from existing
 
+    def test_skipped_count_shown_in_battle_header(self, sample_todos: list[Todo], capsys: Any) -> None:
+        existing_h2h: HeadToHeadResults = {("a", "b"): "a"}
+        existing_wins: WinCounts = {"a": 1, "b": 0, "c": 0}
+        with patch("builtins.input", side_effect=["1", "1"]):
+            run_full_pairwise_comparison(sample_todos, existing_wins, existing_h2h)
+        output = capsys.readouterr().out
+        assert "(1 skipped)" in output
+
+    def test_no_skipped_suffix_when_none_skipped(self, sample_todos: list[Todo], capsys: Any) -> None:
+        with patch("builtins.input", side_effect=["1", "1", "1"]):
+            run_full_pairwise_comparison(sample_todos)
+        output = capsys.readouterr().out
+        assert "skipped" not in output
+
     def test_returns_immediately_when_all_pairs_answered(self, sample_todos: list[Todo]) -> None:
         existing_h2h: HeadToHeadResults = {
             ("a", "b"): "a", ("a", "c"): "a", ("b", "c"): "b"
@@ -475,6 +489,18 @@ class TestRunNewVersusExistingComparison:
             )
         assert len([k for k in h2h if "new" in k[0]]) == 3
         assert h2h[("new", "a")] == "new"  # preserved
+
+    def test_skipped_count_shown_in_new_vs_existing_battle_header(
+        self, sample_todos: list[Todo], capsys: Any
+    ) -> None:
+        new_todos = [make_todo("new", "New Task")]
+        existing_h2h: HeadToHeadResults = {("new", "a"): "new"}
+        with patch("builtins.input", side_effect=["1", "1"]):
+            run_new_versus_existing_comparison(
+                new_todos, sample_todos, {"a": 1, "b": 0, "c": 0, "new": 1}, existing_h2h
+            )
+        output = capsys.readouterr().out
+        assert "(1 skipped)" in output
 
     def test_save_callback_called_after_each_new_vs_existing_answer(
         self, sample_todos: list[Todo]

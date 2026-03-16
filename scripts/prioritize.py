@@ -192,10 +192,11 @@ def run_full_pairwise_comparison(
         return win_counts, head_to_head_results
 
     total = len(pending_pairs)
+    skipped_suffix = f" ({skipped} skipped)" if skipped > 0 else ""
     print(f"\n⚔️  {total} head-to-head battles! Pick the higher-priority task.\n")
 
     for comparison_index, (index_a, index_b) in enumerate(pending_pairs):
-        print(f"🥊 Battle [{comparison_index + 1}/{total}]")
+        print(f"🥊 Battle [{comparison_index + 1}/{total}]{skipped_suffix}")
         print(f"  1: {todos[index_a]['text']}")
         print(f"  2: {todos[index_b]['text']}")
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
@@ -249,10 +250,11 @@ def run_new_versus_existing_comparison(
         return win_counts, head_to_head_results
 
     total = len(pending_pairs)
+    skipped_suffix = f" ({skipped} skipped)" if skipped > 0 else ""
     print(f"\n✨ {total} battles — new challengers vs. the established guard!\n")
 
     for comparison_index, (new_todo, existing_todo) in enumerate(pending_pairs):
-        print(f"🥊 Battle [{comparison_index + 1}/{total}]")
+        print(f"🥊 Battle [{comparison_index + 1}/{total}]{skipped_suffix}")
         print(f"  1: {new_todo['text']}  🆕")
         print(f"  2: {existing_todo['text']}")
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
