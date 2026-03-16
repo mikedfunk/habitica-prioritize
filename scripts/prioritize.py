@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import sys
+from collections.abc import Callable
 from functools import cmp_to_key
 from itertools import combinations
 from pathlib import Path
@@ -31,6 +32,7 @@ MAX_COMFORTABLE_COMPARISONS = 100
 WinCounts = dict[str, int]
 HeadToHeadResults = dict[tuple[str, str], str]
 SavedRanking = dict[str, Any]
+SaveCallback = Callable[[WinCounts, HeadToHeadResults], None]
 
 
 class Todo(TypedDict):
@@ -163,28 +165,46 @@ def prompt_user_for_choice(prompt: str, valid_choices: set[str]) -> str:
 
 def run_full_pairwise_comparison(
     todos: list[Todo],
+    existing_win_counts: WinCounts | None = None,
+    existing_head_to_head: HeadToHeadResults | None = None,
+    save_callback: SaveCallback | None = None,
 ) -> tuple[WinCounts, HeadToHeadResults]:
-    """Compare every pair of todos head-to-head. Returns win counts and head-to-head results."""
+    """Compare every pair of todos head-to-head. Returns win counts and head-to-head results.
+
+    If existing_win_counts/existing_head_to_head are provided, already-answered pairs are
+    skipped and the run resumes from where it left off. save_callback is called after each answer.
+    """
     todo_count = len(todos)
-    win_counts: WinCounts = {todo["id"]: 0 for todo in todos}
-    head_to_head_results: HeadToHeadResults = {}
+    win_counts: WinCounts = dict(existing_win_counts) if existing_win_counts else {todo["id"]: 0 for todo in todos}
+    head_to_head_results: HeadToHeadResults = dict(existing_head_to_head) if existing_head_to_head else {}
 
-    comparison_pairs = list(combinations(range(todo_count), 2))
-    total_comparisons = len(comparison_pairs)
+    all_pairs = list(combinations(range(todo_count), 2))
+    pending_pairs = [
+        (i, j) for i, j in all_pairs
+        if (todos[i]["id"], todos[j]["id"]) not in head_to_head_results
+        and (todos[j]["id"], todos[i]["id"]) not in head_to_head_results
+    ]
+    skipped = len(all_pairs) - len(pending_pairs)
 
-    print(
-        f"\n⚔️  {total_comparisons} head-to-head battles! Pick the higher-priority task.\n"
-    )
+    if skipped > 0:
+        print(f"\n⏭️  Skipped {skipped} already-answered battle(s). {len(pending_pairs)} remaining.")
+    if not pending_pairs:
+        return win_counts, head_to_head_results
 
-    for comparison_index, (index_a, index_b) in enumerate(comparison_pairs):
-        print(f"🥊 Battle [{comparison_index + 1}/{total_comparisons}]")
-        display_comparison_progress(comparison_index, total_comparisons)
+    total = len(pending_pairs)
+    print(f"\n⚔️  {total} head-to-head battles! Pick the higher-priority task.\n")
+
+    for comparison_index, (index_a, index_b) in enumerate(pending_pairs):
+        print(f"🥊 Battle [{comparison_index + 1}/{total}]")
+        display_comparison_progress(comparison_index, total)
         print(f"  1: {todos[index_a]['text']}")
         print(f"  2: {todos[index_b]['text']}")
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
         winner_task_id = todos[index_a]["id"] if choice == "1" else todos[index_b]["id"]
         win_counts[winner_task_id] += 1
         head_to_head_results[(todos[index_a]["id"], todos[index_b]["id"])] = winner_task_id
+        if save_callback:
+            save_callback(win_counts, head_to_head_results)
         print()
 
     return win_counts, head_to_head_results
@@ -195,38 +215,53 @@ def run_new_versus_existing_comparison(
     existing_todos: list[Todo],
     previous_win_counts: WinCounts,
     previous_head_to_head: HeadToHeadResults,
+    save_callback: SaveCallback | None = None,
 ) -> tuple[WinCounts, HeadToHeadResults]:
     """Compare each new todo against each existing todo only.
 
     Skips new-vs-new and existing-vs-existing comparisons, preserving the
     relative ordering already established among existing todos.
+    Already-answered pairs are skipped when resuming a partial run.
+    save_callback is called after each answer.
     """
     win_counts: WinCounts = dict(previous_win_counts)
     head_to_head_results: HeadToHeadResults = dict(previous_head_to_head)
 
     for new_todo in new_todos:
-        win_counts[new_todo["id"]] = 0
+        if new_todo["id"] not in win_counts:
+            win_counts[new_todo["id"]] = 0
 
-    comparison_pairs = [
+    all_pairs = [
         (new_todo, existing_todo)
         for new_todo in new_todos
         for existing_todo in existing_todos
     ]
-    total_comparisons = len(comparison_pairs)
+    pending_pairs = [
+        (new_todo, existing_todo) for new_todo, existing_todo in all_pairs
+        if (new_todo["id"], existing_todo["id"]) not in head_to_head_results
+        and (existing_todo["id"], new_todo["id"]) not in head_to_head_results
+    ]
+    skipped = len(all_pairs) - len(pending_pairs)
 
-    print(
-        f"\n✨ {total_comparisons} battles — new challengers vs. the established guard!\n"
-    )
+    if skipped > 0:
+        print(f"\n⏭️  Skipped {skipped} already-answered battle(s). {len(pending_pairs)} remaining.")
+    if not pending_pairs:
+        return win_counts, head_to_head_results
 
-    for comparison_index, (new_todo, existing_todo) in enumerate(comparison_pairs):
-        print(f"🥊 Battle [{comparison_index + 1}/{total_comparisons}]")
-        display_comparison_progress(comparison_index, total_comparisons)
+    total = len(pending_pairs)
+    print(f"\n✨ {total} battles — new challengers vs. the established guard!\n")
+
+    for comparison_index, (new_todo, existing_todo) in enumerate(pending_pairs):
+        print(f"🥊 Battle [{comparison_index + 1}/{total}]")
+        display_comparison_progress(comparison_index, total)
         print(f"  1: {new_todo['text']}  🆕")
         print(f"  2: {existing_todo['text']}")
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
         winner_task_id = new_todo["id"] if choice == "1" else existing_todo["id"]
         win_counts[winner_task_id] = win_counts.get(winner_task_id, 0) + 1
         head_to_head_results[(new_todo["id"], existing_todo["id"])] = winner_task_id
+        if save_callback:
+            save_callback(win_counts, head_to_head_results)
         print()
 
     return win_counts, head_to_head_results
@@ -408,6 +443,12 @@ def main() -> None:
     win_counts: WinCounts
     head_to_head_results: HeadToHeadResults
 
+    def make_save_callback(current_todos: list[Todo]) -> SaveCallback:
+        def save_progress(wc: WinCounts, h2h: HeadToHeadResults) -> None:
+            ranked = rank_todos_by_win_count(current_todos, wc, h2h)
+            save_ranking(tag_names, current_todos, wc, h2h, ranked)
+        return save_progress
+
     if saved_ranking and saved_ranking.get("tags") == tag_names:
         previous_win_counts: WinCounts = saved_ranking.get("wins", {})
         previous_head_to_head: HeadToHeadResults = deserialize_head_to_head(
@@ -417,46 +458,63 @@ def main() -> None:
         existing_todos = [todo for todo in todos if todo["id"] in previous_win_counts]
 
         if not new_todos:
-            print(
-                "\n✨ No new items found — all todos are already ranked. Here's your current standing:"
-            )
-            ranked_todos = rank_todos_by_win_count(
-                todos, previous_win_counts, previous_head_to_head
-            )
-            display_ranking(ranked_todos, previous_win_counts)
-            return
-
-        print(
-            f"\n🆕 {len(new_todos)} new challenger(s) detected! {len(existing_todos)} veterans already ranked."
-        )
-
-        keep_existing = False
-        if existing_todos:
-            if args.incremental:
-                keep_existing = True
-            else:
-                keep_existing = (
-                    prompt_user_for_choice(
-                        "Keep existing priorities (K) or re-prioritize everything from scratch (R)? (K/R): ",
-                        {"K", "R"},
-                    )
-                    == "K"
+            expected_pairs = len(todos) * (len(todos) - 1) // 2
+            completed_pairs = len(previous_head_to_head)
+            if completed_pairs < expected_pairs:
+                print(
+                    f"\n⏸️  Partial run detected! {completed_pairs}/{expected_pairs} battles completed. Resuming..."
                 )
+                input("\n🥊 Ready to resume? Press Enter to continue...")
+                win_counts, head_to_head_results = run_full_pairwise_comparison(
+                    todos, previous_win_counts, previous_head_to_head, make_save_callback(todos)
+                )
+            else:
+                print(
+                    "\n✨ No new items found — all todos are already ranked. Here's your current standing:"
+                )
+                ranked_todos = rank_todos_by_win_count(
+                    todos, previous_win_counts, previous_head_to_head
+                )
+                display_ranking(ranked_todos, previous_win_counts)
+                return
 
-        if keep_existing:
-            input("\n🥊 Ready to rumble? Press Enter to begin...")
-            win_counts, head_to_head_results = run_new_versus_existing_comparison(
-                new_todos, existing_todos, previous_win_counts, previous_head_to_head
-            )
         else:
-            todos = warn_and_maybe_limit_for_full_pairwise(todos)
-            input("\n🥊 Ready to rumble? Press Enter to begin...")
-            win_counts, head_to_head_results = run_full_pairwise_comparison(todos)
+            print(
+                f"\n🆕 {len(new_todos)} new challenger(s) detected! {len(existing_todos)} veterans already ranked."
+            )
+
+            keep_existing = False
+            if existing_todos:
+                if args.incremental:
+                    keep_existing = True
+                else:
+                    keep_existing = (
+                        prompt_user_for_choice(
+                            "Keep existing priorities (K) or re-prioritize everything from scratch (R)? (K/R): ",
+                            {"K", "R"},
+                        )
+                        == "K"
+                    )
+
+            if keep_existing:
+                input("\n🥊 Ready to rumble? Press Enter to begin...")
+                win_counts, head_to_head_results = run_new_versus_existing_comparison(
+                    new_todos, existing_todos, previous_win_counts, previous_head_to_head,
+                    make_save_callback(todos)
+                )
+            else:
+                todos = warn_and_maybe_limit_for_full_pairwise(todos)
+                input("\n🥊 Ready to rumble? Press Enter to begin...")
+                win_counts, head_to_head_results = run_full_pairwise_comparison(
+                    todos, save_callback=make_save_callback(todos)
+                )
 
     else:
         todos = warn_and_maybe_limit_for_full_pairwise(todos)
         input("\n🥊 Ready to rumble? Press Enter to begin...")
-        win_counts, head_to_head_results = run_full_pairwise_comparison(todos)
+        win_counts, head_to_head_results = run_full_pairwise_comparison(
+            todos, save_callback=make_save_callback(todos)
+        )
 
     ranked_todos = rank_todos_by_win_count(todos, win_counts, head_to_head_results)
     display_ranking(ranked_todos, win_counts)

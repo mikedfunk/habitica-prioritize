@@ -327,6 +327,45 @@ class TestRunFullPairwiseComparison:
         assert head_to_head_results[("a", "c")] == "a"
         assert head_to_head_results[("b", "c")] == "b"
 
+    def test_skips_already_answered_pairs(self, sample_todos: list[Todo]) -> None:
+        # (a,b) already answered — only (a,c) and (b,c) remain
+        existing_h2h: HeadToHeadResults = {("a", "b"): "a"}
+        existing_wins: WinCounts = {"a": 1, "b": 0, "c": 0}
+        with patch("builtins.input", side_effect=["1", "1"]):  # only 2 battles
+            win_counts, h2h = run_full_pairwise_comparison(
+                sample_todos, existing_wins, existing_h2h
+            )
+        assert len(h2h) == 3
+        assert h2h[("a", "b")] == "a"  # preserved from existing
+
+    def test_returns_immediately_when_all_pairs_answered(self, sample_todos: list[Todo]) -> None:
+        existing_h2h: HeadToHeadResults = {
+            ("a", "b"): "a", ("a", "c"): "a", ("b", "c"): "b"
+        }
+        existing_wins: WinCounts = {"a": 2, "b": 1, "c": 0}
+        with patch("builtins.input", side_effect=[]) as mock_input:
+            win_counts, h2h = run_full_pairwise_comparison(
+                sample_todos, existing_wins, existing_h2h
+            )
+        mock_input.assert_not_called()
+        assert win_counts == existing_wins
+
+    def test_save_callback_called_after_each_answer(self, sample_todos: list[Todo]) -> None:
+        callback = MagicMock()
+        with patch("builtins.input", side_effect=["1", "1", "1"]):
+            run_full_pairwise_comparison(sample_todos, save_callback=callback)
+        assert callback.call_count == 3
+
+    def test_save_callback_receives_updated_state(self, sample_todos: list[Todo]) -> None:
+        saved_states: list[WinCounts] = []
+        def callback(wc: WinCounts, h2h: HeadToHeadResults) -> None:
+            saved_states.append(dict(wc))
+        with patch("builtins.input", side_effect=["1", "1", "1"]):
+            run_full_pairwise_comparison(sample_todos, save_callback=callback)
+        assert saved_states[0]["a"] == 1  # a won battle 1
+        assert saved_states[1]["a"] == 2  # a won battle 2
+        assert saved_states[2]["b"] == 1  # b won battle 3
+
 
 # ---------------------------------------------------------------------------
 # run_new_versus_existing_comparison()
@@ -423,6 +462,30 @@ class TestRunNewVersusExistingComparison:
             )
 
         assert previous_win_counts == original_win_counts
+
+    def test_skips_already_answered_new_vs_existing_pairs(
+        self, sample_todos: list[Todo]
+    ) -> None:
+        new_todos = [make_todo("new", "New Task")]
+        previous_wins: WinCounts = {"a": 2, "b": 1, "c": 0, "new": 0}
+        existing_h2h: HeadToHeadResults = {("new", "a"): "new"}  # already answered
+        with patch("builtins.input", side_effect=["1", "1"]):  # only 2 remaining
+            win_counts, h2h = run_new_versus_existing_comparison(
+                new_todos, sample_todos, previous_wins, existing_h2h
+            )
+        assert len([k for k in h2h if "new" in k[0]]) == 3
+        assert h2h[("new", "a")] == "new"  # preserved
+
+    def test_save_callback_called_after_each_new_vs_existing_answer(
+        self, sample_todos: list[Todo]
+    ) -> None:
+        new_todos = [make_todo("new", "New Task")]
+        callback = MagicMock()
+        with patch("builtins.input", return_value="1"):
+            run_new_versus_existing_comparison(
+                new_todos, sample_todos, {"a": 0, "b": 0, "c": 0}, {}, callback
+            )
+        assert callback.call_count == 3  # 1 new × 3 existing
 
 
 # ---------------------------------------------------------------------------
@@ -891,6 +954,32 @@ class TestMain:
                                 with patch("builtins.input", side_effect=["", "N"]):
                                     prioritize.main()
         mock_full.assert_called_once()
+
+    def test_partial_run_resumes_full_pairwise(self) -> None:
+        # Only 1 of 3 pairs answered — should resume full pairwise
+        partial_h2h: HeadToHeadResults = {("a", "b"): "a"}  # 1/3 pairs done
+        saved: SavedRanking = {
+            "tags": ["Work"],
+            "wins": {"a": 1, "b": 0, "c": 0},
+            "head_to_head": serialize_head_to_head(partial_h2h),
+            "ranked_ids": ["a", "b", "c"],
+        }
+        with patch("sys.argv", ["prioritize.py", "--tags", "Work"]):
+            with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
+                with patch(
+                    "prioritize.fetch_incomplete_todos", return_value=MAIN_SAMPLE_TODOS
+                ):
+                    with patch("prioritize.load_saved_ranking", return_value=saved):
+                        with patch(
+                            "prioritize.run_full_pairwise_comparison",
+                            return_value=(MAIN_WIN_COUNTS, MAIN_H2H),
+                        ) as mock_full:
+                            with patch("prioritize.save_ranking"):
+                                with patch("builtins.input", side_effect=["", "N"]):
+                                    prioritize.main()
+        mock_full.assert_called_once()
+        # Should pass existing win counts as second positional arg for resume
+        assert mock_full.call_args[0][1] is not None
 
     def test_saved_ranking_no_new_todos_returns_early_without_saving(self) -> None:
         saved: SavedRanking = {
