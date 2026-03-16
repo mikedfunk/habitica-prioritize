@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = ["requests"]
-# ///
 """
 Habitica Prioritization Matrix
 

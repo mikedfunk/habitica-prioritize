@@ -39,7 +39,7 @@ Find these in [Habitica](https://habitica.com) under **Settings → API**.
 ### Full ranking (first time, or periodic re-rank)
 
 ```bash
-uv run scripts/prioritize.py
+uv run habitica-prioritize
 ```
 
 You'll be prompted to choose which tags to filter by:
@@ -58,19 +58,19 @@ You can also pass tags directly as CLI arguments to skip the prompt:
 
 ```bash
 # Single tag
-uv run scripts/prioritize.py --tags Work
+uv run habitica-prioritize --tags Work
 
 # Multiple tags (todos must match ALL specified tags)
-uv run scripts/prioritize.py --tags Work Urgent
+uv run habitica-prioritize --tags Work Urgent
 
 # No filter — rank all incomplete todos
-uv run scripts/prioritize.py --tags
+uv run habitica-prioritize --tags
 ```
 
 Limit to top N items (recommended ≤15 — N items = N×(N-1)/2 comparisons):
 
 ```bash
-uv run scripts/prioritize.py --tags Work --limit 10
+uv run habitica-prioritize --tags Work --limit 10
 ```
 
 ### 🆕 When new tasks are found (K/R prompt)
@@ -92,7 +92,7 @@ For example, if existing tasks A and B are ranked and new tasks C and D appear, 
 To automatically choose K (keep existing priorities) without being asked:
 
 ```bash
-uv run scripts/prioritize.py --incremental
+uv run habitica-prioritize --incremental
 ```
 
 ### 🎮 Applying the ranking to Habitica
@@ -106,7 +106,7 @@ After every ranking run, you'll be prompted:
 Answering `Y` **remotely reorders your To Do tasks under the Active tab** in [Habitica](https://habitica.com) to match your ranking. To skip the prompt and always apply automatically:
 
 ```bash
-uv run scripts/prioritize.py --tags Work --reorder
+uv run habitica-prioritize --tags Work --reorder
 ```
 
 ### 🖥️ Example output
@@ -146,7 +146,7 @@ uv run scripts/prioritize.py --tags Work --reorder
 ## 🧪 Running tests
 
 ```bash
-uv run --with pytest --with requests pytest scripts/tests/ -v
+uv run pytest scripts/tests/ -v
 ```
 
 ## 📄 License

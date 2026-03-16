@@ -14,7 +14,7 @@ head-to-head result. Results are saved so future runs can do incremental re-rank
 ### Full ranking (first time, or full re-rank)
 
 ```bash
-uv run scripts/prioritize.py
+uv run habitica-prioritize
 ```
 
 If `--tags` is omitted, the script prompts interactively with a list of available tags.
@@ -22,19 +22,19 @@ Pass tags directly to skip the prompt:
 
 ```bash
 # Single tag
-uv run scripts/prioritize.py --tags Work
+uv run habitica-prioritize --tags Work
 
 # Multiple tags (todos must match ALL specified tags)
-uv run scripts/prioritize.py --tags Work Urgent
+uv run habitica-prioritize --tags Work Urgent
 
 # No filter — rank all incomplete todos
-uv run scripts/prioritize.py --tags
+uv run habitica-prioritize --tags
 ```
 
 Limit to top N items (recommended ≤15 to keep comparisons manageable):
 
 ```bash
-uv run scripts/prioritize.py --tags Work --limit 10
+uv run habitica-prioritize --tags Work --limit 10
 ```
 
 ### When new tasks are found (K/R prompt)
@@ -53,7 +53,7 @@ Keep existing priorities (K) or re-prioritize everything from scratch (R)? (K/R)
 Automatically selects K (keep existing priorities) without prompting:
 
 ```bash
-uv run scripts/prioritize.py --incremental
+uv run habitica-prioritize --incremental
 ```
 
 ### Applying the ranking to Habitica
@@ -64,7 +64,7 @@ Answering Y reorders your tasks in the Habitica UI to match the ranking.
 To skip the prompt and always apply automatically:
 
 ```bash
-uv run scripts/prioritize.py --tags Work --reorder
+uv run habitica-prioritize --tags Work --reorder
 ```
 
 ## Requirements
@@ -84,7 +84,7 @@ Environment variables must be set:
 ## Running tests
 
 ```bash
-uv run --with pytest --with requests pytest scripts/tests/ -v
+uv run pytest scripts/tests/ -v
 ```
 
 ## Notes
