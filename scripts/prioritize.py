@@ -185,19 +185,19 @@ def run_full_pairwise_comparison(
         if (todos[i]["id"], todos[j]["id"]) not in head_to_head_results
         and (todos[j]["id"], todos[i]["id"]) not in head_to_head_results
     ]
-    skipped = len(all_pairs) - len(pending_pairs)
+    remembered = len(all_pairs) - len(pending_pairs)
 
-    if skipped > 0:
-        print(f"\n⏭️  Skipped {skipped} already-answered battle(s). {len(pending_pairs)} remaining.")
+    if remembered > 0:
+        print(f"\n⏭️  {remembered} remembered answer(s). {len(pending_pairs)} remaining.")
     if not pending_pairs:
         return win_counts, head_to_head_results
 
     total = len(pending_pairs)
-    skipped_suffix = f" ({skipped} skipped)" if skipped > 0 else ""
+    remembered_suffix = f" ({remembered} remembered answers)" if remembered > 0 else ""
     print(f"\n⚔️  {total} head-to-head battles! Pick the higher-priority task.\n")
 
     for comparison_index, (index_a, index_b) in enumerate(pending_pairs):
-        print(f"🥊 Battle [{comparison_index + 1}/{total}]{skipped_suffix}")
+        print(f"🥊 Battle [{comparison_index + 1}/{total}]{remembered_suffix}")
         print(f"  1: {todos[index_a]['text']}")
         print(f"  2: {todos[index_b]['text']}")
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
@@ -243,19 +243,19 @@ def run_new_versus_existing_comparison(
         if (new_todo["id"], existing_todo["id"]) not in head_to_head_results
         and (existing_todo["id"], new_todo["id"]) not in head_to_head_results
     ]
-    skipped = len(all_pairs) - len(pending_pairs)
+    remembered = len(all_pairs) - len(pending_pairs)
 
-    if skipped > 0:
-        print(f"\n⏭️  Skipped {skipped} already-answered battle(s). {len(pending_pairs)} remaining.")
+    if remembered > 0:
+        print(f"\n⏭️  {remembered} remembered answer(s). {len(pending_pairs)} remaining.")
     if not pending_pairs:
         return win_counts, head_to_head_results
 
     total = len(pending_pairs)
-    skipped_suffix = f" ({skipped} skipped)" if skipped > 0 else ""
+    remembered_suffix = f" ({remembered} remembered answers)" if remembered > 0 else ""
     print(f"\n✨ {total} battles — new challengers vs. the established guard!\n")
 
     for comparison_index, (new_todo, existing_todo) in enumerate(pending_pairs):
-        print(f"🥊 Battle [{comparison_index + 1}/{total}]{skipped_suffix}")
+        print(f"🥊 Battle [{comparison_index + 1}/{total}]{remembered_suffix}")
         print(f"  1: {new_todo['text']}  🆕")
         print(f"  2: {existing_todo['text']}")
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
