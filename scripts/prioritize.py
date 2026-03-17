@@ -195,9 +195,7 @@ def run_full_pairwise_comparison(
     remembered = len(all_pairs) - len(pending_pairs)
 
     if remembered > 0:
-        print(
-            f"\n⏭️  {remembered} veterans ranked. {len(pending_pairs)} remaining."
-        )
+        print(f"\n⏭️  {remembered} veterans ranked. {len(pending_pairs)} remaining.")
     if not pending_pairs:
         return win_counts, head_to_head_results
 
@@ -258,9 +256,7 @@ def run_new_versus_existing_comparison(
     remembered = len(all_pairs) - len(pending_pairs)
 
     if remembered > 0:
-        print(
-            f"\n⏭️  {remembered} veterans ranked. {len(pending_pairs)} remaining."
-        )
+        print(f"\n⏭️  {remembered} veterans ranked. {len(pending_pairs)} remaining.")
     if not pending_pairs:
         return win_counts, head_to_head_results
 
