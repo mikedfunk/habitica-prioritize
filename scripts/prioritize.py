@@ -391,7 +391,7 @@ def print_status(
         print(f"   Battles answered:     {answered}  (already saved)")
         print(f"   Battles remaining:    {remaining_full}")
         print(f"   Total battles:        {expected_full}")
-        print(f"   New todos:             0")
+        print("   New todos:             0")
 
 
 def compute_max_items_for_comparisons(max_comparisons: int) -> int:
