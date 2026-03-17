@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from collections.abc import Callable
 from functools import cmp_to_key
 from itertools import combinations
@@ -340,6 +341,7 @@ def apply_ranking_order_to_habitica(ranked_todos: list[Todo]) -> None:
         )
         response.raise_for_status()
         print(f"  #{position + 1}: {todo['text']}")
+        time.sleep(2)
     print("✅ Done! Your tasks are ranked and ready to conquer. 🎮")
 
 

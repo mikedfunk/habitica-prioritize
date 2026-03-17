@@ -606,7 +606,8 @@ class TestApplyRankingOrderToHabitica:
             os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
         ):
             with patch("requests.post", return_value=mock_response) as mock_post:
-                apply_ranking_order_to_habitica(sample_todos)
+                with patch("time.sleep"):
+                    apply_ranking_order_to_habitica(sample_todos)
 
         assert mock_post.call_count == 3
 
@@ -618,7 +619,8 @@ class TestApplyRankingOrderToHabitica:
             os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
         ):
             with patch("requests.post", return_value=mock_response) as mock_post:
-                apply_ranking_order_to_habitica(sample_todos)
+                with patch("time.sleep"):
+                    apply_ranking_order_to_habitica(sample_todos)
 
         api_calls = mock_post.call_args_list
         assert "/move/to/0" in api_calls[0][0][0]
@@ -633,7 +635,8 @@ class TestApplyRankingOrderToHabitica:
             os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
         ):
             with patch("requests.post", return_value=mock_response) as mock_post:
-                apply_ranking_order_to_habitica(sample_todos)
+                with patch("time.sleep"):
+                    apply_ranking_order_to_habitica(sample_todos)
 
         api_calls = mock_post.call_args_list
         assert "/tasks/a/move" in api_calls[0][0][0]
@@ -645,7 +648,8 @@ class TestApplyRankingOrderToHabitica:
             os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
         ):
             with patch("requests.post") as mock_post:
-                apply_ranking_order_to_habitica([])
+                with patch("time.sleep"):
+                    apply_ranking_order_to_habitica([])
 
         mock_post.assert_not_called()
 
@@ -657,7 +661,8 @@ class TestApplyRankingOrderToHabitica:
             os.environ, {"HABITICA_USER_ID": "uid", "HABITICA_API_TOKEN": "token"}
         ):
             with patch("requests.post", return_value=mock_response) as mock_post:
-                apply_ranking_order_to_habitica(sample_todos[:1])
+                with patch("time.sleep"):
+                    apply_ranking_order_to_habitica(sample_todos[:1])
 
         headers = mock_post.call_args[1]["headers"]
         assert "x-client" in headers
