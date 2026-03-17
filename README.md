@@ -107,7 +107,7 @@ Example output (fully ranked):
 ```
 📊 Status for: Work
    Todos fetched:        14
-   Battles answered:     43  (already saved)
+   Veterans ranked:      43
    Battles remaining:    48
    Total battles:        91
    New todos:             0
@@ -117,7 +117,7 @@ Example output (new todos found):
 ```
 📊 Status for: Work
    Todos fetched:        16
-   Battles answered:     91  (already saved)
+   Veterans ranked:      91
    New todos:             2  (not yet compared)
    New battles needed:   32  (2 new × 16 existing)
 ```
