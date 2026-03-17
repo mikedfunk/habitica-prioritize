@@ -176,19 +176,28 @@ def run_full_pairwise_comparison(
     skipped and the run resumes from where it left off. save_callback is called after each answer.
     """
     todo_count = len(todos)
-    win_counts: WinCounts = dict(existing_win_counts) if existing_win_counts else {todo["id"]: 0 for todo in todos}
-    head_to_head_results: HeadToHeadResults = dict(existing_head_to_head) if existing_head_to_head else {}
+    win_counts: WinCounts = (
+        dict(existing_win_counts)
+        if existing_win_counts
+        else {todo["id"]: 0 for todo in todos}
+    )
+    head_to_head_results: HeadToHeadResults = (
+        dict(existing_head_to_head) if existing_head_to_head else {}
+    )
 
     all_pairs = list(combinations(range(todo_count), 2))
     pending_pairs = [
-        (i, j) for i, j in all_pairs
+        (i, j)
+        for i, j in all_pairs
         if (todos[i]["id"], todos[j]["id"]) not in head_to_head_results
         and (todos[j]["id"], todos[i]["id"]) not in head_to_head_results
     ]
     remembered = len(all_pairs) - len(pending_pairs)
 
     if remembered > 0:
-        print(f"\n⏭️  {remembered} remembered answer(s). {len(pending_pairs)} remaining.")
+        print(
+            f"\n⏭️  {remembered} remembered answer(s). {len(pending_pairs)} remaining."
+        )
     if not pending_pairs:
         return win_counts, head_to_head_results
 
@@ -203,7 +212,9 @@ def run_full_pairwise_comparison(
         choice = prompt_user_for_choice("  👑 Winner? (1/2): ", {"1", "2"})
         winner_task_id = todos[index_a]["id"] if choice == "1" else todos[index_b]["id"]
         win_counts[winner_task_id] += 1
-        head_to_head_results[(todos[index_a]["id"], todos[index_b]["id"])] = winner_task_id
+        head_to_head_results[(todos[index_a]["id"], todos[index_b]["id"])] = (
+            winner_task_id
+        )
         display_comparison_progress(comparison_index + 1, total)
         if save_callback:
             save_callback(win_counts, head_to_head_results)
@@ -239,14 +250,17 @@ def run_new_versus_existing_comparison(
         for existing_todo in existing_todos
     ]
     pending_pairs = [
-        (new_todo, existing_todo) for new_todo, existing_todo in all_pairs
+        (new_todo, existing_todo)
+        for new_todo, existing_todo in all_pairs
         if (new_todo["id"], existing_todo["id"]) not in head_to_head_results
         and (existing_todo["id"], new_todo["id"]) not in head_to_head_results
     ]
     remembered = len(all_pairs) - len(pending_pairs)
 
     if remembered > 0:
-        print(f"\n⏭️  {remembered} remembered answer(s). {len(pending_pairs)} remaining.")
+        print(
+            f"\n⏭️  {remembered} remembered answer(s). {len(pending_pairs)} remaining."
+        )
     if not pending_pairs:
         return win_counts, head_to_head_results
 
@@ -384,7 +398,9 @@ def print_status(
         new_battles = len(new_todos) * len(existing_todos)
         print(f"   Battles answered:     {answered}  (already saved)")
         print(f"   New todos:             {len(new_todos)}  (not yet compared)")
-        print(f"   New battles needed:   {new_battles}  ({len(new_todos)} new × {len(existing_todos)} existing)")
+        print(
+            f"   New battles needed:   {new_battles}  ({len(new_todos)} new × {len(existing_todos)} existing)"
+        )
     else:
         expected_full = len(existing_todos) * (len(existing_todos) - 1) // 2
         remaining_full = expected_full - answered
@@ -498,6 +514,7 @@ def main() -> None:
         def save_progress(wc: WinCounts, h2h: HeadToHeadResults) -> None:
             ranked = rank_todos_by_win_count(current_todos, wc, h2h)
             save_ranking(tag_names, current_todos, wc, h2h, ranked)
+
         return save_progress
 
     if saved_ranking and saved_ranking.get("tags") == tag_names:
@@ -517,7 +534,10 @@ def main() -> None:
                 )
                 input("\n🥊 Ready to resume? Press Enter to continue...")
                 win_counts, head_to_head_results = run_full_pairwise_comparison(
-                    todos, previous_win_counts, previous_head_to_head, make_save_callback(todos)
+                    todos,
+                    previous_win_counts,
+                    previous_head_to_head,
+                    make_save_callback(todos),
                 )
             else:
                 print(
@@ -550,8 +570,11 @@ def main() -> None:
             if keep_existing:
                 input("\n🥊 Ready to rumble? Press Enter to begin...")
                 win_counts, head_to_head_results = run_new_versus_existing_comparison(
-                    new_todos, existing_todos, previous_win_counts, previous_head_to_head,
-                    make_save_callback(todos)
+                    new_todos,
+                    existing_todos,
+                    previous_win_counts,
+                    previous_head_to_head,
+                    make_save_callback(todos),
                 )
             else:
                 todos = warn_and_maybe_limit_for_full_pairwise(todos)

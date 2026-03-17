@@ -399,7 +399,7 @@ wheels = [
 
 [[package]]
 name = "habitica-prioritize"
-version = "0.1.5"
+version = "0.1.12"
 source = { editable = "." }
 dependencies = [
     { name = "requests" },

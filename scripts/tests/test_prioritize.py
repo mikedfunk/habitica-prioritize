@@ -338,7 +338,9 @@ class TestRunFullPairwiseComparison:
         assert len(h2h) == 3
         assert h2h[("a", "b")] == "a"  # preserved from existing
 
-    def test_skipped_count_shown_in_battle_header(self, sample_todos: list[Todo], capsys: Any) -> None:
+    def test_skipped_count_shown_in_battle_header(
+        self, sample_todos: list[Todo], capsys: Any
+    ) -> None:
         existing_h2h: HeadToHeadResults = {("a", "b"): "a"}
         existing_wins: WinCounts = {"a": 1, "b": 0, "c": 0}
         with patch("builtins.input", side_effect=["1", "1"]):
@@ -346,15 +348,21 @@ class TestRunFullPairwiseComparison:
         output = capsys.readouterr().out
         assert "(1 remembered answers)" in output
 
-    def test_no_skipped_suffix_when_none_skipped(self, sample_todos: list[Todo], capsys: Any) -> None:
+    def test_no_skipped_suffix_when_none_skipped(
+        self, sample_todos: list[Todo], capsys: Any
+    ) -> None:
         with patch("builtins.input", side_effect=["1", "1", "1"]):
             run_full_pairwise_comparison(sample_todos)
         output = capsys.readouterr().out
         assert "remembered answers" not in output
 
-    def test_returns_immediately_when_all_pairs_answered(self, sample_todos: list[Todo]) -> None:
+    def test_returns_immediately_when_all_pairs_answered(
+        self, sample_todos: list[Todo]
+    ) -> None:
         existing_h2h: HeadToHeadResults = {
-            ("a", "b"): "a", ("a", "c"): "a", ("b", "c"): "b"
+            ("a", "b"): "a",
+            ("a", "c"): "a",
+            ("b", "c"): "b",
         }
         existing_wins: WinCounts = {"a": 2, "b": 1, "c": 0}
         with patch("builtins.input", side_effect=[]) as mock_input:
@@ -364,16 +372,22 @@ class TestRunFullPairwiseComparison:
         mock_input.assert_not_called()
         assert win_counts == existing_wins
 
-    def test_save_callback_called_after_each_answer(self, sample_todos: list[Todo]) -> None:
+    def test_save_callback_called_after_each_answer(
+        self, sample_todos: list[Todo]
+    ) -> None:
         callback = MagicMock()
         with patch("builtins.input", side_effect=["1", "1", "1"]):
             run_full_pairwise_comparison(sample_todos, save_callback=callback)
         assert callback.call_count == 3
 
-    def test_save_callback_receives_updated_state(self, sample_todos: list[Todo]) -> None:
+    def test_save_callback_receives_updated_state(
+        self, sample_todos: list[Todo]
+    ) -> None:
         saved_states: list[WinCounts] = []
+
         def callback(wc: WinCounts, h2h: HeadToHeadResults) -> None:
             saved_states.append(dict(wc))
+
         with patch("builtins.input", side_effect=["1", "1", "1"]):
             run_full_pairwise_comparison(sample_todos, save_callback=callback)
         assert saved_states[0]["a"] == 1  # a won battle 1
@@ -497,7 +511,10 @@ class TestRunNewVersusExistingComparison:
         existing_h2h: HeadToHeadResults = {("new", "a"): "new"}
         with patch("builtins.input", side_effect=["1", "1"]):
             run_new_versus_existing_comparison(
-                new_todos, sample_todos, {"a": 1, "b": 0, "c": 0, "new": 1}, existing_h2h
+                new_todos,
+                sample_todos,
+                {"a": 1, "b": 0, "c": 0, "new": 1},
+                existing_h2h,
             )
         output = capsys.readouterr().out
         assert "(1 remembered answers)" in output
@@ -1274,9 +1291,7 @@ class TestMain:
         assert "Todos fetched:" in output
         assert "Battles answered:" in output
 
-    def test_status_flag_no_saved_ranking_prints_message(
-        self, capsys: Any
-    ) -> None:
+    def test_status_flag_no_saved_ranking_prints_message(self, capsys: Any) -> None:
         with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--status"]):
             with patch("prioritize.fetch_all_tags", return_value=MAIN_AVAILABLE_TAGS):
                 with patch(
