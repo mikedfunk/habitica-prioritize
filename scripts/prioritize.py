@@ -196,13 +196,13 @@ def run_full_pairwise_comparison(
 
     if remembered > 0:
         print(
-            f"\n⏭️  {remembered} remembered answer(s). {len(pending_pairs)} remaining."
+            f"\n⏭️  {remembered} veterans ranked. {len(pending_pairs)} remaining."
         )
     if not pending_pairs:
         return win_counts, head_to_head_results
 
     total = len(pending_pairs)
-    remembered_suffix = f" ({remembered} remembered answers)" if remembered > 0 else ""
+    remembered_suffix = f" ({remembered} veterans ranked)" if remembered > 0 else ""
     print(f"\n⚔️  {total} head-to-head battles! Pick the higher-priority task.\n")
 
     for comparison_index, (index_a, index_b) in enumerate(pending_pairs):
@@ -259,13 +259,13 @@ def run_new_versus_existing_comparison(
 
     if remembered > 0:
         print(
-            f"\n⏭️  {remembered} remembered answer(s). {len(pending_pairs)} remaining."
+            f"\n⏭️  {remembered} veterans ranked. {len(pending_pairs)} remaining."
         )
     if not pending_pairs:
         return win_counts, head_to_head_results
 
     total = len(pending_pairs)
-    remembered_suffix = f" ({remembered} remembered answers)" if remembered > 0 else ""
+    remembered_suffix = f" ({remembered} veterans ranked)" if remembered > 0 else ""
     print(f"\n✨ {total} battles — new challengers vs. the established guard!\n")
 
     for comparison_index, (new_todo, existing_todo) in enumerate(pending_pairs):
@@ -396,7 +396,7 @@ def print_status(
 
     if new_todos:
         new_battles = len(new_todos) * len(existing_todos)
-        print(f"   Battles answered:     {answered}  (already saved)")
+        print(f"   Veterans ranked:      {answered}")
         print(f"   New todos:             {len(new_todos)}  (not yet compared)")
         print(
             f"   New battles needed:   {new_battles}  ({len(new_todos)} new × {len(existing_todos)} existing)"
@@ -404,7 +404,7 @@ def print_status(
     else:
         expected_full = len(existing_todos) * (len(existing_todos) - 1) // 2
         remaining_full = expected_full - answered
-        print(f"   Battles answered:     {answered}  (already saved)")
+        print(f"   Veterans ranked:      {answered}")
         print(f"   Battles remaining:    {remaining_full}")
         print(f"   Total battles:        {expected_full}")
         print("   New todos:             0")
@@ -470,7 +470,7 @@ def main() -> None:
     parser.add_argument(
         "--status",
         action="store_true",
-        help="Show ranking status (battles answered, remaining, new todos) without running any battles.",
+        help="Show ranking status (veterans ranked, remaining, new todos) without running any battles.",
     )
     args = parser.parse_args()
 

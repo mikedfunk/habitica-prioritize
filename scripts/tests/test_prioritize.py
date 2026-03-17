@@ -346,7 +346,7 @@ class TestRunFullPairwiseComparison:
         with patch("builtins.input", side_effect=["1", "1"]):
             run_full_pairwise_comparison(sample_todos, existing_wins, existing_h2h)
         output = capsys.readouterr().out
-        assert "(1 remembered answers)" in output
+        assert "(1 veterans ranked)" in output
 
     def test_no_skipped_suffix_when_none_skipped(
         self, sample_todos: list[Todo], capsys: Any
@@ -354,7 +354,7 @@ class TestRunFullPairwiseComparison:
         with patch("builtins.input", side_effect=["1", "1", "1"]):
             run_full_pairwise_comparison(sample_todos)
         output = capsys.readouterr().out
-        assert "remembered answers" not in output
+        assert "veterans ranked" not in output
 
     def test_returns_immediately_when_all_pairs_answered(
         self, sample_todos: list[Todo]
@@ -517,7 +517,7 @@ class TestRunNewVersusExistingComparison:
                 existing_h2h,
             )
         output = capsys.readouterr().out
-        assert "(1 remembered answers)" in output
+        assert "(1 veterans ranked)" in output
 
     def test_save_callback_called_after_each_new_vs_existing_answer(
         self, sample_todos: list[Todo]
@@ -1289,7 +1289,7 @@ class TestMain:
         output = capsys.readouterr().out
         assert "📊 Status for: Work" in output
         assert "Todos fetched:" in output
-        assert "Battles answered:" in output
+        assert "Veterans ranked:" in output
 
     def test_status_flag_no_saved_ranking_prints_message(self, capsys: Any) -> None:
         with patch("sys.argv", ["prioritize.py", "--tags", "Work", "--status"]):
